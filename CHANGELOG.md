@@ -5,3 +5,5 @@
 - Initial commit
 - Add `ArgDetail` model
 	- And tests
+- Add `ArgsParser` class
+	- And tests
