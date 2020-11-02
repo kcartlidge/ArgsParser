@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System;
 using System.Linq;
 
 namespace ArgsParser.Tests
@@ -136,6 +137,48 @@ namespace ArgsParser.Tests
             var result = parser.Parse();
 
             Assert.IsEmpty(result.Errors);
+        }
+
+        [Test]
+        public void OptionsWithTypes_ValuesCannotBeConverted_HasErrors()
+        {
+            var parser = new ArgsParser(new string[] { "-dtm", "a", "-f", "b" })
+                .RequiresOption<DateTime>("dtm", "A datetime value")
+                .RequiresOption<float>("f", "A float value");
+
+            var result = parser.Parse();
+
+            Assert.AreEqual(2, result.Errors.Count);
+            Assert.Contains("dtm", result.Errors.Keys.ToList());
+            StringAssert.Contains("value of type", result.Errors["dtm"].First());
+            Assert.Contains("f", result.Errors.Keys.ToList());
+            StringAssert.Contains("value of type", result.Errors["f"].First());
+        }
+
+        [Test]
+        public void OptionsWithTypes_TypeConversionOccurs()
+        {
+            var parser = new ArgsParser(new string[] {
+                    "-s", "a", "-i", "1", "-n", "1.2", "-d", "2020-10-03", "-b", "true" })
+                .RequiresOption<string>("s", "A string value")
+                .RequiresOption<int>("i", "An integer value")
+                .RequiresOption<decimal>("n", "A numeric value")
+                .RequiresOption<DateTime>("d", "A datetime value")
+                .RequiresOption<bool>("b", "A boolean value");
+
+            var result = parser.Parse();
+
+            Assert.IsEmpty(result.Errors);
+            Assert.IsInstanceOf<string>(result.ParsedOptions["s"]);
+            Assert.IsInstanceOf<int>(result.ParsedOptions["i"]);
+            Assert.IsInstanceOf<decimal>(result.ParsedOptions["n"]);
+            Assert.IsInstanceOf<DateTime>(result.ParsedOptions["d"]);
+            Assert.IsInstanceOf<bool>(result.ParsedOptions["b"]);
+            Assert.AreEqual("a", result.ParsedOptions["s"]);
+            Assert.AreEqual(1, result.ParsedOptions["i"]);
+            Assert.AreEqual(1.2D, result.ParsedOptions["n"]);
+            Assert.AreEqual(new DateTime(2020, 10, 3), result.ParsedOptions["d"]);
+            Assert.AreEqual(true, result.ParsedOptions["b"]);
         }
 
         [Test]

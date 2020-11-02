@@ -7,3 +7,6 @@
 	- And tests
 - Add `ArgsParser` class
 	- And tests
+- Support typed options
+	- Converts where possible
+	- Else returns as strings

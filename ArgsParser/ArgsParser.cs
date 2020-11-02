@@ -7,7 +7,7 @@ namespace ArgsParser
     public class ArgsParser
     {
         public List<string> ParsedFlags = new List<string>();
-        public SortedList<string, string> ParsedOptions = new SortedList<string, string>();
+        public SortedList<string, object> ParsedOptions = new SortedList<string, object>();
         public bool HasErrors { get => Errors.Any(); }
         public SortedList<string, List<string>> Errors = new SortedList<string, List<string>>();
 
@@ -68,6 +68,7 @@ namespace ArgsParser
         public ArgsParser Parse()
         {
             // Extract all the flags and options.
+            // In this initial splitting process, all option values are treated as strings.
             var currentName = (string)null;
             foreach (var arg in RawArgs)
             {
@@ -120,6 +121,20 @@ namespace ArgsParser
             // Final trailing option/flag.
             if (currentName != null)
                 ParsedFlags.Add(currentName.ToLower());
+
+            // Convert any non-string options.
+            foreach (var option in Options.Where(x => x.Value.ArgType != typeof(string)))
+                if (ParsedOptions.ContainsKey(option.Key))
+                {
+                    try
+                    {
+                        ParsedOptions[option.Key] = Convert.ChangeType(ParsedOptions[option.Key], option.Value.ArgType);
+                    }
+                    catch
+                    {
+                        AddError(option.Key, $"Expected a value of type {option.Value.ArgType}: {option.Key}");
+                    }
+                }
 
             // Enforce any options requirements.
             // No required flags, as that would force the value to always be true.
