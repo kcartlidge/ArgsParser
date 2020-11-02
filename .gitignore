@@ -1,0 +1,11 @@
+.vs/
+.vscode/
+.idea/
+bin/
+obj/
+packages/
+_NCrunch*/
+
+.DS_Store
+*.suo
+*.ncrunch*
