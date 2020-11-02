@@ -2,6 +2,25 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Title>ArgsParser</Title>
+    <Authors>K Cartlidge</Authors>
+    <Description>Easy argument parsing for .Net Core applications.</Description>
+    <Summary>Easy argument parsing for .Net Core applications.</Summary>
+    <Copyright>K Cartlidge</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/kcartlidge/ArgsParser</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/kcartlidge/ArgsParser</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>args, parsing</PackageTags>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
