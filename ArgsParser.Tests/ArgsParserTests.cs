@@ -54,6 +54,17 @@ namespace ArgsParser.Tests
         }
 
         [Test]
+        public void OptionRequired_NothingProvided_WithDefaultValue_HasNoErrors()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .RequiresOption<string>("opt", "An option", "default-value");
+
+            var result = parser.Parse();
+
+            Assert.IsEmpty(result.Errors);
+        }
+
+        [Test]
         public void OptionRequired_OptionProvided_HasNoErrors()
         {
             var parser = new ArgsParser(new string[] { "-opt", "1" })
@@ -62,6 +73,18 @@ namespace ArgsParser.Tests
             var result = parser.Parse();
 
             Assert.IsEmpty(result.Errors);
+        }
+
+        [Test]
+        public void OptionRequired_OptionProvided_WithDefaultValue_OverridesDefault()
+        {
+            var parser = new ArgsParser(new string[] { "-opt", "actual-value" })
+                .RequiresOption<string>("opt", "An option", "default-value");
+
+            var result = parser.Parse();
+
+            Assert.IsEmpty(result.Errors);
+            Assert.AreEqual("actual-value", parser.ParsedOptions["opt"]);
         }
 
         [Test]
@@ -242,6 +265,148 @@ namespace ArgsParser.Tests
 
             Assert.AreEqual(1, result.Errors.Count);
             Assert.IsTrue(result.HasErrors);
+        }
+
+        /* FETCHING */
+
+        [Test]
+        public void FlagProvided_UnknownFlag_ThrowsArgumentException()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .HasFlag("f", "A flag");
+            parser.Parse();
+
+            Action action = () => parser.FlagProvided("unknown-flag");
+
+            Assert.Throws<ArgumentException>(action.Invoke);
+        }
+
+        [Test]
+        public void FlagProvided_WithoutFlag_ReturnsFalse()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .HasFlag("f", "A flag");
+
+            parser.Parse();
+
+            Assert.IsFalse(parser.FlagProvided("f"));
+        }
+
+        [Test]
+        public void FlagProvided_WithFlag_ReturnsTrue()
+        {
+            var parser = new ArgsParser(new string[] { "-f" })
+                .HasFlag("f", "A flag");
+
+            parser.Parse();
+
+            Assert.IsTrue(parser.FlagProvided("f"));
+        }
+
+        [Test]
+        public void OptionProvided_UnknownOption_ThrowsArgumentException()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .SupportsOption<string>("o", "An option");
+            parser.Parse();
+
+            Action action = () => parser.OptionProvided("unknown-option");
+
+            Assert.Throws<ArgumentException>(action.Invoke);
+        }
+
+        [Test]
+        public void OptionProvided_WithoutOption_ReturnsFalse()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .SupportsOption<string>("o", "An option");
+
+            parser.Parse();
+
+            Assert.IsFalse(parser.OptionProvided("o"));
+        }
+
+        [Test]
+        public void OptionProvided_WithOption_ReturnsTrue()
+        {
+            var parser = new ArgsParser(new string[] { "-o", "value" })
+                .SupportsOption<string>("o", "An option");
+
+            parser.Parse();
+
+            Assert.IsTrue(parser.OptionProvided("o"));
+        }
+
+        [Test]
+        public void GetOption_UnknownOption_ReturnsArgumentException()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .SupportsOption<int>("o", "An option");
+            parser.Parse();
+
+            Action action = () => parser.GetOption<int>("unknown-option");
+
+            Assert.Throws<ArgumentException>(action.Invoke);
+        }
+
+        [Test]
+        public void GetOption_IncorrectOptionType_ReturnsInvalidCastException()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .SupportsOption<int>("o", "An option");
+            parser.Parse();
+
+            Action action = () => parser.GetOption<int?>("o");
+
+            Assert.Throws<InvalidCastException>(action.Invoke);
+        }
+
+        [Test]
+        public void GetOption_NothingProvided_NoDefault_ReturnsTypeDefault()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .SupportsOption<int>("o", "An option");
+            parser.Parse();
+
+            var result = parser.GetOption<int>("o");
+
+            Assert.AreEqual(default(int), result);
+        }
+
+        [Test]
+        public void GetOption_NothingProvided_NoDefault_ReturnsNullableTypeDefault()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .SupportsOption<int?>("o", "An option");
+            parser.Parse();
+
+            var result = parser.GetOption<int?>("o");
+
+            Assert.AreEqual(default(int?), result);
+        }
+
+        [Test]
+        public void GetOption_NothingProvided_WithDefault_ReturnsSpecifiedDefault()
+        {
+            var parser = new ArgsParser(new string[] { })
+                .SupportsOption<int>("o", "An option", 42);
+            parser.Parse();
+
+            var result = parser.GetOption<int>("o");
+
+            Assert.AreEqual(42, result);
+        }
+
+        [Test]
+        public void GetOption_ValueProvided_WithDefault_ReturnsActualValue()
+        {
+            var parser = new ArgsParser(new string[] { "-o", "1337" })
+                .SupportsOption<int>("o", "An option", 42);
+            parser.Parse();
+
+            var result = parser.GetOption<int>("o");
+
+            Assert.AreEqual(1337, result);
         }
     }
 }

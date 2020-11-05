@@ -13,8 +13,8 @@ namespace ArgsParser
 
         private readonly string UnknownKey = "N/A";
         private readonly string[] RawArgs;
-        private Dictionary<string, ArgDetail> Flags = new Dictionary<string, ArgDetail>();
-        private Dictionary<string, ArgDetail> Options = new Dictionary<string, ArgDetail>();
+        private readonly Dictionary<string, ArgDetail> Flags = new Dictionary<string, ArgDetail>();
+        private readonly Dictionary<string, ArgDetail> Options = new Dictionary<string, ArgDetail>();
         private int MaxOptionWidth => Options.Max(x => x.Key.Length);
         private int MaxFlagWidth => Flags.Max(x => x.Key.Length);
 
@@ -140,7 +140,11 @@ namespace ArgsParser
             // No required flags, as that would force the value to always be true.
             foreach (var option in Options.Where(x => x.Value.IsRequired))
                 if (ParsedOptions.ContainsKey(option.Key) == false)
-                    AddError(option.Key, $"Option missing: {option.Key}");
+                    // Apply a default if provided, else it's an error.
+                    if (option.Value.DefaultValue != null)
+                        ParsedOptions.Add(option.Key, option.Value.DefaultValue);
+                    else
+                        AddError(option.Key, $"Option missing: {option.Key}");
 
             // Check for unsupported.
             foreach (var flag in ParsedFlags)
@@ -151,6 +155,44 @@ namespace ArgsParser
                     AddError(option.Key, $"Unknown option: {option.Key}");
 
             return this;
+        }
+
+        public bool FlagProvided(string flagName)
+        {
+            if (Flags.ContainsKey(flagName) == false)
+                throw new ArgumentException($"Unknown flag: {flagName}");
+
+            return (ParsedFlags.Contains(flagName));
+        }
+
+        public bool OptionProvided(string optionName)
+        {
+            if (Options.ContainsKey(optionName) == false)
+                throw new ArgumentException($"Unknown option: {optionName}");
+
+            return (ParsedOptions.ContainsKey(optionName));
+        }
+
+        public T GetOption<T>(string optionName)
+        {
+            // Unknown option.
+            if (Options.ContainsKey(optionName) == false)
+                throw new ArgumentException($"Unknown option: {optionName}");
+
+            // Option type and generic type on this call differ.
+            if (typeof(T) != Options[optionName].ArgType)
+                throw new InvalidCastException($"Incorrect type getting option {optionName}");
+
+            // Option value was provided (default is already applied if needed).
+            if (OptionProvided(optionName))
+                return (T)ParsedOptions[optionName];
+
+            // No option provided, but there is a default given.
+            if (Options[optionName].DefaultValue != null)
+                return (T)Options[optionName].DefaultValue;
+
+            // Fallback on the default value for the return type.
+            return default;
         }
 
         private void AddError(string key, string message)
