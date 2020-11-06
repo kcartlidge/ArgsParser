@@ -1,6 +1,17 @@
 # CHANGELOG
 
-## 5th November 2020
+## 6th November 2020 - v2.0.0
+
+- Renamed `ArsParser` class to `Parser`
+	- "Avoids stuttering" as Golang would say
+- Renamed `ParsedFlags` to `Flags`
+- Renamed `ParsedOptions` to `Options`
+- Enhanced Intellisense details
+- All flags/options treated lowercase
+	- For clarity, convenience, and consistency
+	- Actual option values returned unchanged
+
+## 5th November 2020 - v1.0.1
 
 - Include default values
 - Add `OptionProvided`
