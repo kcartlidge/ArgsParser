@@ -6,34 +6,23 @@ namespace ArgsParser
 {
     public class Parser
     {
-        /// <summary>The key used in Errors if a flag/option could not be determined.</summary>
-        public static readonly string UnknownKey = "n/a";
-
-        /// <summary>FNames of flags discovered via parsing (if parsed, else empty).</summary>
-        public List<string> Flags = new List<string>();
-
-        /// <summary>
-        /// Options discovered via parsing (if parsed, else empty).
-        /// Objects keyed by name. GetOption return typed entries.
-        /// </summary>
-        public SortedList<string, object> Options = new SortedList<string, object>();
-
         /// <summary>Were there errors generated during parsing?</summary>
-        public bool HasErrors { get => Errors.Any(); }
+        public bool HasErrors { get => ArgumentErrors.Any() || ExpectationErrors.Any(); }
 
-        /// <summary>
-        /// Any errors gathered during parsing.
-        /// Keyed by flag/option name, or UnknownKey if that wasn't known.
-        /// Contains lists of 1+ error messages per entry.
-        /// </summary>
-        public SortedList<string, List<string>> Errors = new SortedList<string, List<string>>();
+        /// <summary>Any argument errors gathered during parsing, indexed by order of discovery.</summary>
+        public SortedList<int, string> ArgumentErrors = new SortedList<int, string>();
 
+        /// <summary>Any errors where expectations are not met by the arguments.</summary>
+        public SortedList<string, string> ExpectationErrors = new SortedList<string, string>();
+
+        private bool parsed = false;
         private readonly string[] rawArgs;
+        private List<string> Flags = new List<string>();
+        private SortedList<string, object> Options = new SortedList<string, object>();
         private readonly Dictionary<string, ArgDetail> knownFlags = new Dictionary<string, ArgDetail>();
         private readonly Dictionary<string, ArgDetail> knownOptions = new Dictionary<string, ArgDetail>();
         private int maxOptionWidth => knownOptions.Max(x => x.Key.Length);
         private int maxFlagWidth => knownFlags.Max(x => x.Key.Length);
-        private bool parsed = false;
 
         /// <summary>
         /// Create a new Parser based on the given arguments collection.
@@ -71,7 +60,7 @@ namespace ArgsParser
         /// <summary>Registers a supported non-compulsory flag.</summary>
         /// <param name="optionName">The flag name. Any leading dash prefix is ignored.</param>
         /// <param name="info">Descriptive text for the generated Help().</param>
-        public Parser HasFlag(string flagName, string info)
+        public Parser SupportsFlag(string flagName, string info)
         {
             flagName = flagName.ToLowerInvariant().Trim().TrimStart('-').Trim();
 
@@ -114,76 +103,85 @@ namespace ArgsParser
             if (parsed) return this;
             parsed = true;
 
-            // Extract all the flags and options.
-            // In this initial splitting process, all option values are treated as strings.
-            var currentName = (string)null;
-            foreach (var arg in rawArgs)
+            // Get the sequenced arguments.
+            var args = new SortedList<int, ArgValue>();
+            var inDash = false;
+            for (var i = 0; i < rawArgs.Length; i++)
             {
-                // Should never be the case, but ...
-                if (string.IsNullOrWhiteSpace(arg)) continue;
+                // Assume nothing is known about the current argument.
+                var rawArg = rawArgs[i];
+                var arg = new ArgValue(i + 1, rawArg, ArgType.Unknown);
 
-                if (arg.StartsWith("-"))
+                if (arg.HasDash)
                 {
-                    // Starts an option or a flag.
-                    if (currentName == null)
-                    {
-                        // Not currently in one, so start a new one.
-                        currentName = arg.TrimStart('-').Trim();
-                        if (string.IsNullOrWhiteSpace(currentName))
-                        {
-                            AddError(UnknownKey, $"Argument received with no name");
-                            currentName = null;
-                        }
-                    }
-                    else
-                    {
-                        // Currently in one, so previous one must be a flag.
-                        // Add it, and start a new one.
-                        Flags.Add(currentName.ToLowerInvariant());
-                        currentName = arg.TrimStart('-').Trim();
-                        if (string.IsNullOrWhiteSpace(currentName))
-                        {
-                            AddError(UnknownKey, $"Argument received with no name");
-                            currentName = null;
-                        }
-                    }
+                    // This and previous both dashes, so previous must be a flag.
+                    if (inDash)
+                        args[i - 1].ArgType = ArgType.Flag;
+
+                    // Assume this will just be a flag (options are patched up below).
+                    arg.ArgType = ArgType.Flag;
+                    inDash = true;
                 }
                 else
                 {
-                    // Simple argument.
-                    if (currentName == null)
+                    if (inDash)
                     {
-                        // Not currently in an option.
-                        AddError(UnknownKey, $"Unexpected value: {arg}");
+                        // Not a dash, but previous one was, so must be the value for an option.
+                        args[i - 1].ArgType = ArgType.Option;
+                        args[i - 1].Value = arg.Original;
+                        arg.ArgType = ArgType.Skip;
                     }
-                    else
-                    {
-                        // In an option, so add it with the value and start a new one.
-                        Options.Add(currentName.ToLowerInvariant(), arg);
-                        currentName = null;
-                    }
+                    inDash = false;
+                }
+
+                // Build up the collection of arguments.
+                if (arg.ArgType != ArgType.Skip) args.Add(i, arg);
+            }
+
+            // Check for argument errors (things provided but wrong).
+            // Populate flags and options in passing.
+            foreach (var arg in args)
+            {
+                switch (arg.Value.ArgType)
+                {
+                    case ArgType.Unknown:
+                        AddArgumentError(arg.Key, $"Unexpected value: {arg.Value.Original}");
+                        break;
+                    case ArgType.Flag:
+                        if (arg.Value.Name.Length == 0)
+                            AddArgumentError(arg.Key, $"Flag received with no name");
+                        else if (knownFlags.ContainsKey(arg.Value.Name) == false)
+                            AddArgumentError(arg.Key, $"Unknown flag: {arg.Value.Name}");
+                        else
+                            AddFlag(arg.Value.Name);
+                        break;
+                    case ArgType.Option:
+                        if (arg.Value.Name.Length == 0)
+                            AddArgumentError(arg.Key, $"Option received with no name");
+                        else if (knownOptions.ContainsKey(arg.Value.Name) == false)
+                            AddArgumentError(arg.Key, $"Unknown option: {arg.Value.Name}");
+                        else
+                        {
+                            var o = knownOptions[arg.Value.Name];
+                            AddOption(arg.Value.Name);
+                            try
+                            {
+                                Options[arg.Value.Name] = Convert.ChangeType(arg.Value.Value, o.ArgType);
+                            }
+                            catch
+                            {
+                                AddArgumentError(arg.Value.Sequence, $"Expected a value of type {o.ArgType}: {arg.Value.Name}");
+                            }
+                        }
+                        break;
+                    case ArgType.Skip:
+                    default:
+                        break;
                 }
             }
 
-            // Final trailing option/flag.
-            if (currentName != null)
-                Flags.Add(currentName.ToLowerInvariant());
-
-            // Convert any non-string options.
-            foreach (var option in knownOptions.Where(x => x.Value.ArgType != typeof(string)))
-                if (Options.ContainsKey(option.Key))
-                {
-                    try
-                    {
-                        Options[option.Key] = Convert.ChangeType(Options[option.Key], option.Value.ArgType);
-                    }
-                    catch
-                    {
-                        AddError(option.Key, $"Expected a value of type {option.Value.ArgType}: {option.Key}");
-                    }
-                }
-
-            // Enforce any options requirements.
+            // Check for expectation errors (things expected but missing).
+            // In brief, enforce any options requirements.
             // No required flags, as that would force the value to always be true.
             foreach (var option in knownOptions.Where(x => x.Value.IsRequired))
                 if (Options.ContainsKey(option.Key) == false)
@@ -191,21 +189,13 @@ namespace ArgsParser
                     if (option.Value.DefaultValue != null)
                         Options.Add(option.Key, option.Value.DefaultValue);
                     else
-                        AddError(option.Key, $"Option missing: {option.Key}");
-
-            // Check for unsupported.
-            foreach (var flag in Flags)
-                if (knownFlags.ContainsKey(flag) == false)
-                    AddError(flag, $"Unknown flag: {flag}");
-            foreach (var option in Options)
-                if (knownOptions.ContainsKey(option.Key) == false)
-                    AddError(option.Key, $"Unknown option: {option.Key}");
+                        AddExpectationError(option.Key, $"Option missing: {option.Key}");
 
             return this;
         }
 
         /// <summary>Is the named flag present?</summary>
-        public bool FlagProvided(string flagName)
+        public bool IsFlagProvided(string flagName)
         {
             flagName = flagName.ToLowerInvariant().Trim();
 
@@ -216,7 +206,7 @@ namespace ArgsParser
         }
 
         /// <summary>Is the named option present?</summary>
-        public bool OptionProvided(string optionName)
+        public bool IsOptionProvided(string optionName)
         {
             optionName = optionName.ToLowerInvariant().Trim();
 
@@ -245,7 +235,7 @@ namespace ArgsParser
                 throw new InvalidCastException($"Incorrect type getting option {optionName}");
 
             // Option value was provided (default is already applied if needed).
-            if (OptionProvided(optionName))
+            if (IsOptionProvided(optionName))
                 return (T)Options[optionName];
 
             // No option provided, but there is a default given.
@@ -256,15 +246,34 @@ namespace ArgsParser
             return default;
         }
 
-        private void AddError(string key, string message)
+        /* SUPPORT */
+
+        private void AddArgumentError(int sequence, string message)
         {
-            key = key.ToLowerInvariant().Trim();
+            if (ArgumentErrors.ContainsKey(sequence))
+                ArgumentErrors[sequence] = ArgumentErrors[sequence] + $"\n{message}";
+            else
+                ArgumentErrors.Add(sequence, message);
+        }
 
-            if (Errors.ContainsKey(key) == false)
-                Errors.Add(key, new List<string>());
+        private void AddExpectationError(string key, string message)
+        {
+            if (ExpectationErrors.ContainsKey(key))
+                ExpectationErrors[key] = ExpectationErrors[key] + $"\n{message}";
+            else
+                ExpectationErrors.Add(key, message);
+        }
 
-            if (Errors[key].Contains(message)) return;
-            Errors[key].Add(message);
+        private void AddFlag(string flagName)
+        {
+            if (Flags.Contains(flagName)) return;
+            Flags.Add(flagName);
+        }
+
+        private void AddOption(string optionName)
+        {
+            if (Options.ContainsKey(optionName)) return;
+            Options.Add(optionName, null);
         }
     }
 }

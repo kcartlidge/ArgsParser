@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 7th November 2020 - v3.0.0
+
+- Cleaner public surface
+- Simplified error collections
+	- Expectation errors
+	- Argument errors
+
 ## 6th November 2020 - v2.0.0
 
 - Renamed `ArsParser` class to `Parser`

@@ -6,7 +6,38 @@ namespace ArgsParser.Tests
 {
     class ParserTests
     {
-        private string UnknownKey = Parser.UnknownKey;
+        [Test]
+        public void README_Example()
+        {
+            var args = new string[] { "-run", "data", "Site Title", "--serve", "-ignore", "-port", "3000" };
+            var parser = new Parser(args)
+                .SupportsOption<int>("port", "Port to start the dev server on", 1337)
+                .RequiresOption<string>("read", "Folder to read the site from", "site")
+                .RequiresOption<string>("write", "Folder to write the result to")
+                .SupportsFlag("serve", "Start the site going in a dev server")
+                .SupportsFlag("force", "Overwrite any destination content")
+                .Help();
+
+            var result = parser.Parse();
+
+            Assert.AreEqual(4, result.ExpectationErrors.Count + result.ArgumentErrors.Count);
+            Assert.Contains("Option missing: write", result.ExpectationErrors.Values.ToList());
+            Assert.Contains("Unknown option: run", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("Unexpected value: Site Title", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("Unknown flag: ignore", result.ArgumentErrors.Values.ToList());
+
+            Assert.IsTrue(result.IsOptionProvided("port"));
+            Assert.AreEqual(3000, result.GetOption<int>("port"));
+
+            Assert.IsTrue(result.IsOptionProvided("read"));
+            Assert.AreEqual("site", result.GetOption<string>("read"));
+
+            Assert.IsFalse(result.IsOptionProvided("write"));
+            Assert.AreEqual(null, result.GetOption<string>("write"));
+
+            Assert.IsTrue(result.IsFlagProvided("serve"));
+            Assert.IsFalse(result.IsFlagProvided("force"));
+        }
 
         [Test]
         public void NothingAllowed_NothingProvided_HasNoErrors()
@@ -14,7 +45,7 @@ namespace ArgsParser.Tests
             var result = new Parser(new string[] { })
                 .Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         /* OPTIONS */
@@ -27,7 +58,7 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
@@ -38,7 +69,7 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
@@ -49,8 +80,8 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.Contains("opt", result.Errors.Keys.ToList());
-            Assert.AreEqual(1, result.Errors.Count);
+            Assert.Contains("Option missing: opt", result.ExpectationErrors.Values.ToList());
+            Assert.IsEmpty(result.ArgumentErrors);
         }
 
         [Test]
@@ -61,7 +92,7 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
@@ -72,7 +103,7 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
@@ -83,21 +114,18 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
-            Assert.AreEqual("actual-value", parser.Options["opt"]);
+            Assert.IsFalse(result.HasErrors);
+            Assert.AreEqual("actual-value", parser.GetOption<string>("opt"));
         }
 
         [Test]
         public void UnknownOptionProvided_HasErrors()
         {
-            var result = new Parser(new string[] { "-a", "b", "c", "-serve" })
+            var result = new Parser(new string[] { "-a", "b" })
                 .Parse();
 
-            var errorKeys = result.Errors.Keys.ToList();
-            Assert.Contains("a", errorKeys);
-            Assert.Contains("serve", errorKeys);
-            Assert.Contains(UnknownKey, errorKeys);
-            Assert.AreEqual(3, result.Errors.Count);
+            Assert.IsEmpty(result.ExpectationErrors);
+            Assert.Contains("Unknown option: a", result.ArgumentErrors.Values.ToList());
         }
 
         [Test]
@@ -108,7 +136,7 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.AreEqual("MyValue", result.Options["opt"]);
+            Assert.AreEqual("MyValue", result.GetOption<string>("opt"));
         }
 
         /* FLAGS */
@@ -117,34 +145,33 @@ namespace ArgsParser.Tests
         public void HasFlag_NothingProvided_HasNoErrors()
         {
             var parser = new Parser(new string[] { })
-                .HasFlag("serve", "A flag");
+                .SupportsFlag("serve", "A flag");
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
         public void HasFlag_FlagProvided_HasNoErrors()
         {
             var parser = new Parser(new string[] { "-serve" })
-                .HasFlag("serve", "A flag");
+                .SupportsFlag("serve", "A flag");
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
         public void UnknownFlagProvided_HasErrors()
         {
-            var parser = new Parser(new string[] { "-serve" })
-                .HasFlag("not-serve", "A flag");
+            var parser = new Parser(new string[] { "-serve" });
 
             var result = parser.Parse();
 
-            Assert.Contains("serve", result.Errors.Keys.ToList());
-            Assert.AreEqual(1, result.Errors.Count);
+            Assert.IsEmpty(result.ExpectationErrors);
+            Assert.Contains("Unknown flag: serve", result.ArgumentErrors.Values.ToList());
         }
 
 
@@ -157,18 +184,33 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsEmpty(result.ExpectationErrors);
+            Assert.IsEmpty(result.ArgumentErrors);
             Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
-        public void HasErrors_WithError_ReturnsTrue()
+        public void HasErrors_WithExpectationError_ReturnsTrue()
+        {
+            var parser = new Parser(new string[] { })
+                .RequiresOption<string>("a", "An option");
+
+            var result = parser.Parse();
+
+            Assert.AreEqual(1, result.ExpectationErrors.Count);
+            Assert.IsEmpty(result.ArgumentErrors);
+            Assert.IsTrue(result.HasErrors);
+        }
+
+        [Test]
+        public void HasErrors_WithArgumentError_ReturnsTrue()
         {
             var parser = new Parser(new string[] { "-" });
 
             var result = parser.Parse();
 
-            Assert.AreEqual(1, result.Errors.Count);
+            Assert.IsEmpty(result.ExpectationErrors);
+            Assert.AreEqual(1, result.ArgumentErrors.Count);
             Assert.IsTrue(result.HasErrors);
         }
 
@@ -176,13 +218,13 @@ namespace ArgsParser.Tests
         /* EXISTENCE CHECKING */
 
         [Test]
-        public void FlagProvided_UnknownFlag_ThrowsArgumentException()
+        public void FlagProvided_CheckingUnknownFlag_ThrowsArgumentException()
         {
             var parser = new Parser(new string[] { })
-                .HasFlag("f", "A flag");
+                .SupportsFlag("f", "A flag");
             parser.Parse();
 
-            Action action = () => parser.FlagProvided("unknown-flag");
+            Action action = () => parser.IsFlagProvided("unknown-flag");
 
             Assert.Throws<ArgumentException>(action.Invoke);
         }
@@ -191,32 +233,32 @@ namespace ArgsParser.Tests
         public void FlagProvided_WithoutFlag_ReturnsFalse()
         {
             var parser = new Parser(new string[] { })
-                .HasFlag("f", "A flag");
+                .SupportsFlag("f", "A flag");
 
             parser.Parse();
 
-            Assert.IsFalse(parser.FlagProvided("f"));
+            Assert.IsFalse(parser.IsFlagProvided("f"));
         }
 
         [Test]
         public void FlagProvided_WithFlag_ReturnsTrue()
         {
             var parser = new Parser(new string[] { "-f" })
-                .HasFlag("f", "A flag");
+                .SupportsFlag("f", "A flag");
 
             parser.Parse();
 
-            Assert.IsTrue(parser.FlagProvided("f"));
+            Assert.IsTrue(parser.IsFlagProvided("f"));
         }
 
         [Test]
-        public void OptionProvided_UnknownOption_ThrowsArgumentException()
+        public void OptionProvided_CheckingUnknownOption_ThrowsArgumentException()
         {
             var parser = new Parser(new string[] { })
                 .SupportsOption<string>("o", "An option");
             parser.Parse();
 
-            Action action = () => parser.OptionProvided("unknown-option");
+            Action action = () => parser.IsOptionProvided("unknown-option");
 
             Assert.Throws<ArgumentException>(action.Invoke);
         }
@@ -229,7 +271,7 @@ namespace ArgsParser.Tests
 
             parser.Parse();
 
-            Assert.IsFalse(parser.OptionProvided("o"));
+            Assert.IsFalse(parser.IsOptionProvided("o"));
         }
 
         [Test]
@@ -240,7 +282,7 @@ namespace ArgsParser.Tests
 
             parser.Parse();
 
-            Assert.IsTrue(parser.OptionProvided("o"));
+            Assert.IsTrue(parser.IsOptionProvided("o"));
         }
 
 
@@ -325,12 +367,12 @@ namespace ArgsParser.Tests
         public void OptionsAndFlags_AreCaseInsensitive()
         {
             var parser = new Parser(new string[] { "-oPT", "1", "-SerVe" })
-                .HasFlag("sErve", "A flag")
+                .SupportsFlag("sErve", "A flag")
                 .SupportsOption<string>("Opt", "An option");
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
@@ -342,8 +384,9 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.AreEqual(value, result.Options["opt"]);
+            Assert.AreEqual(value, result.GetOption<string>("opt"));
         }
+
 
         /* GENERAL */
 
@@ -351,13 +394,13 @@ namespace ArgsParser.Tests
         public void ComplexOptionsAndFlags_ConditionsMet_HasNoErrors()
         {
             var parser = new Parser(new string[] { "-opt2", "2", "-serve", "-opt1", "1" })
-                .HasFlag("serve", "A flag")
+                .SupportsFlag("serve", "A flag")
                 .SupportsOption<string>("opt1", "An option")
                 .RequiresOption<string>("opt2", "Another option");
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
+            Assert.IsFalse(result.HasErrors);
         }
 
         [Test]
@@ -369,11 +412,10 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.AreEqual(2, result.Errors.Count);
-            Assert.Contains("dtm", result.Errors.Keys.ToList());
-            StringAssert.Contains("value of type", result.Errors["dtm"].First());
-            Assert.Contains("f", result.Errors.Keys.ToList());
-            StringAssert.Contains("value of type", result.Errors["f"].First());
+            Assert.IsEmpty(result.ExpectationErrors);
+            Assert.AreEqual(2, result.ArgumentErrors.Count);
+            Assert.Contains("Expected a value of type System.DateTime: dtm", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("Expected a value of type System.Single: f", result.ArgumentErrors.Values.ToList());
         }
 
         [Test]
@@ -389,17 +431,12 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.IsEmpty(result.Errors);
-            Assert.IsInstanceOf<string>(result.Options["s"]);
-            Assert.IsInstanceOf<int>(result.Options["i"]);
-            Assert.IsInstanceOf<decimal>(result.Options["n"]);
-            Assert.IsInstanceOf<DateTime>(result.Options["d"]);
-            Assert.IsInstanceOf<bool>(result.Options["b"]);
-            Assert.AreEqual("a", result.Options["s"]);
-            Assert.AreEqual(1, result.Options["i"]);
-            Assert.AreEqual(1.2D, result.Options["n"]);
-            Assert.AreEqual(new DateTime(2020, 10, 3), result.Options["d"]);
-            Assert.AreEqual(true, result.Options["b"]);
+            Assert.IsFalse(result.HasErrors);
+            Assert.AreEqual("a", result.GetOption<string>("s"));
+            Assert.AreEqual(1, result.GetOption<int>("i"));
+            Assert.AreEqual(1.2D, result.GetOption<decimal>("n"));
+            Assert.AreEqual(new DateTime(2020, 10, 3), result.GetOption<DateTime>("d"));
+            Assert.AreEqual(true, result.GetOption<bool>("b"));
         }
 
         [Test]
@@ -410,23 +447,22 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.Contains(UnknownKey, result.Errors.Keys.ToList());
-            Assert.AreEqual(1, result.Errors.Count);
+            Assert.IsEmpty(result.ExpectationErrors);
+            Assert.Contains("Unexpected value: what?", result.ArgumentErrors.Values.ToList());
         }
 
         [Test]
         public void OptionsAndFlagsProvided_JustDashes_HasErrors()
         {
             var parser = new Parser(new string[] { "-", "1", "-a", "-" })
-                .HasFlag("a", "A flag");
+                .SupportsFlag("a", "A flag");
 
             var result = parser.Parse();
 
-            Assert.AreEqual(1, result.Errors.Count);
-            var err = result.Errors.First();
-            Assert.AreEqual(UnknownKey, err.Key);
-            Assert.Contains("Argument received with no name", err.Value);
-            Assert.Contains("Unexpected value: 1", err.Value);
+            Assert.IsEmpty(result.ExpectationErrors);
+            Assert.AreEqual(2, result.ArgumentErrors.Count);
+            Assert.Contains("Option received with no name", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("Flag received with no name", result.ArgumentErrors.Values.ToList());
         }
     }
 }
