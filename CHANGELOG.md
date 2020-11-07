@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 7th November 2020 - additional
+
+- Reformatted README
+	- Nicer layout in Nuget
+
 ## 7th November 2020 - v3.0.0
 
 - Cleaner public surface
