@@ -15,7 +15,7 @@
     <RepositoryType>Git</RepositoryType>
     <PackageTags>args, parsing</PackageTags>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>4.0.3</Version>
+    <Version>4.0.4</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

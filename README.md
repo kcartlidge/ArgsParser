@@ -1,4 +1,4 @@
-# ArgsParser v4.0.3
+# ArgsParser v4.0.4
 
 Easy argument parsing for .Net applications (Core 3 or later).
 Full unit test coverage. Compatible with NetStandard 2.0.
@@ -7,6 +7,7 @@ Available as [a nuget package](https://www.nuget.org/packages/ArgsParser/).
 ## Contents
 
 - [Example usage](#example-usage)
+	- [Custom option validators](#custom-option-validators)
 - [Auto-generated helper text](#auto-generated-helper-text)
 - [Supported features](#supported-features)
 - [Example input and errors](#example-input-and-errors)
@@ -39,6 +40,42 @@ var startServing = parser.IsFlagProvided("serve");
 var port = parser.GetOption<int>("port");
 var read = parser.GetOption<string>("read");
 ```
+
+### Custom option validators
+
+Standard validation is concerned with the presence/absence of arguments.
+Custom option validators allow you to also check their *contents*.
+
+For example, here's a custom validator function that checks an option contains a CSV filename. This same function can be used repeatedly for multiple options.
+You can also declare inline functions using lambda but this is clearer for explanatory purposes.
+
+```cs
+/// <summary>Sample validator function which checks for a CSV filename.</summary>
+/// <param name="key">Name of the argument.</param>
+/// <param name="value">Content passed in.</param>
+/// <returns>A list of any errors.</returns>
+private List<string> IsCSV(string key, object value)
+{
+    // In reality we would also need null checks etc.
+    var errs = new List<string>();
+    var ext = Path.GetExtension($"{value}").ToLowerInvariant();
+    if (ext != ".csv") errs.Add($"{key} does not hold a CSV filename.");
+    return errs;
+}
+```
+
+The signature is always the same. Your validator receives an option name and value, then returns a list of zero or more error messages which will be automatically gathered alongside the standard errors. The value is an `object` because your options are generically typed and therefore there is no guarantee what the incoming type will be. (It's your codebase; if you know which options your validator is being registered with you can make casting assumptions.)
+
+Once you have a validator you need to register it:
+
+```cs
+var parser = new Parser(args)
+    .SupportsOption<string>("filename", "A CSV filename")
+    .AddCustomOptionValidator("filename", IsCSV);
+parser.Parse();
+```
+
+*Accessing errors is described further on.*
 
 ## Auto-generated helper text
 
@@ -86,6 +123,7 @@ In the examples below, `2` is a left indent of two spaces.
 - Provides two collections of error messages
   - Expectation errors
     - Missing required options
+    - Custom option validator errors
   - Argument errors
     - Option values of incorrect type
       - This *may* be switched to be an Expectation error in a future change
@@ -114,6 +152,7 @@ Whilst the `-read` option is missing there is no error logged - it was defined w
 Errors come in two collections (the property `Parser.HasErrors` will be `true` if either has entries):
 
 - `ExpectationErrors` are where specific expectations are not met (eg a missing required option) so the relevant option/flag whose expectations are not being met is known
+  - Custom option validator errors will also be in here
 - `ArgumentErrors` are where something was provided but there were general issues with it (eg a value provided without an option name preceeding it) so there is no certainty as to what was intended by the input given and we cannot definitively tie it to a specific option/flag
 
 Based on the example above the errors (as key/value pairs) will be as follows:

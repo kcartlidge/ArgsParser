@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- v4.0.4
+	- Custom option validators (plus tests)
 - v4.0.3
 	- Bug fix: `ShowProvidedArguments` gatekeeping inverted
 	- Change log (this file) reformatted

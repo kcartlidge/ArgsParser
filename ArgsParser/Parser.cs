@@ -19,6 +19,7 @@ namespace ArgsParser
         private readonly string[] rawArgs;
         private List<string> Flags = new List<string>();
         private SortedList<string, object> Options = new SortedList<string, object>();
+        private readonly Dictionary<string, Func<string, object, List<string>>> validators = new Dictionary<string, Func<string, object, List<string>>>();
         private readonly Dictionary<string, ArgDetail> knownFlags = new Dictionary<string, ArgDetail>();
         private readonly Dictionary<string, ArgDetail> knownOptions = new Dictionary<string, ArgDetail>();
         private int maxOptionWidth =>
@@ -67,6 +68,31 @@ namespace ArgsParser
             flagName = flagName.ToLowerInvariant().Trim().TrimStart('-').Trim();
 
             knownFlags.Add(flagName, new ArgDetail(typeof(bool), false, info, null));
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a custom validator that will be called if the specified
+        /// option has a value set. All built-in argument parsing and
+        /// validation will occur first, then custom validators will be
+        /// called in the order registered.
+        /// The validator receives the option name (allowing the same
+        /// validator to be used for multiple arguments) and the value
+        /// provided. It must return a list of strings with any error
+        /// messages that need to be added to the `ExpectationErrors`.
+        /// Only one validator can be added per option.
+        /// </summary>
+        public Parser AddCustomOptionValidator(
+            string option,
+            Func<string, object, List<string>> validate)
+        {
+            var key = (option ?? "").Trim().ToLowerInvariant();
+            if (knownOptions.ContainsKey(key) == false)
+                throw new ArgumentException($"Cannot add a validator for unknown option '{key}'.");
+            if (validators.ContainsKey(key))
+                throw new ArgumentException($"A validator for {key} has already been added.");
+
+            validators.Add(key, validate);
             return this;
         }
 
@@ -192,6 +218,15 @@ namespace ArgsParser
                         Options.Add(option.Key, option.Value.DefaultValue);
                     else
                         AddExpectationError(option.Key, $"Option missing: {option.Key}");
+
+            // Apply any custom validators to the options with values.
+            foreach (var option in Options.Where(x => validators.ContainsKey(x.Key)))
+            {
+                // Apply the validator and merge in any errors.
+                var v = option.Value;
+                var errs = validators[option.Key](option.Key, v);
+                foreach (var err in errs) AddExpectationError(option.Key, err);
+            }
 
             return this;
         }

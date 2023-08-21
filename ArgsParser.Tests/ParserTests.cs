@@ -1,5 +1,7 @@
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace ArgsParser.Tests
@@ -282,6 +284,90 @@ namespace ArgsParser.Tests
             parser.Parse();
 
             Assert.IsTrue(parser.IsOptionProvided("o"));
+        }
+
+
+        /* CUSTOM VALIDATION */
+
+        /// <summary>Sample validator function which checks for a CSV filename.</summary>
+        /// <param name="key">Name of the argument.</param>
+        /// <param name="value">Content passed in.</param>
+        /// <returns>A list of any errors.</returns>
+        private List<string> IsCSV(string key, object value)
+        {
+            // In reality we would also need null checks etc.
+            var errs = new List<string>();
+            var ext = Path.GetExtension($"{value}").ToLowerInvariant();
+            if (ext != ".csv") errs.Add($"{key} does not hold a CSV filename.");
+            return errs;
+        }
+
+        [Test]
+        public void AddCustomOptionValidator_KnownOption_GoodValue_NoValidationError()
+        {
+            var argName = "filename";
+            var parser = new Parser(new string[] { $"-{argName}", "FILE.CSV" })
+                .SupportsOption<string>(argName, "A CSV filename")
+                .AddCustomOptionValidator(argName, IsCSV);
+
+            parser.Parse();
+
+            Assert.IsFalse(parser.HasErrors);
+        }
+
+        [Test]
+        public void AddCustomOptionValidator_KnownOption_BadValue_AddsValidationError()
+        {
+            var argName = "filename";
+            var parser = new Parser(new string[] { $"-{argName}", "FILE.TXT" })
+                .SupportsOption<string>(argName, "A CSV filename")
+                .AddCustomOptionValidator(argName, IsCSV);
+
+            parser.Parse();
+
+            Assert.IsTrue(parser.HasErrors);
+            Assert.AreEqual(1, parser.ExpectationErrors.Count);
+            Assert.AreEqual(argName, parser.ExpectationErrors.First().Key);
+            StringAssert.Contains(argName, parser.ExpectationErrors.First().Value);
+        }
+
+        [Test]
+        public void AddCustomOptionValidator_KnownOption_NoValue_ValidatorNotCalled()
+        {
+            var argName = "filename";
+            var parser = new Parser(new string[] { }) // No value given.
+                .SupportsOption<string>(argName, "A CSV filename")
+                .AddCustomOptionValidator(argName, IsCSV);
+
+            parser.Parse();
+
+            Assert.IsFalse(parser.HasErrors);
+        }
+
+        [Test]
+        public void AddCustomOptionValidator_KnownOption_AddsTwice_ThrowsArgumentException()
+        {
+            var parser = new Parser(new string[] { })
+                .SupportsOption<string>("o", "An option");
+
+            Action action = () =>
+            {
+                parser.AddCustomOptionValidator("o", null);
+                parser.AddCustomOptionValidator("o", null);
+            };
+
+            Assert.Throws<ArgumentException>(action.Invoke);
+        }
+
+        [Test]
+        public void AddCustomOptionValidator_UnknownOption_ThrowsArgumentException()
+        {
+            var parser = new Parser(new string[] { })
+                .SupportsOption<string>("o", "An option");
+
+            Action action = () => parser.AddCustomOptionValidator("bad", null);
+
+            Assert.Throws<ArgumentException>(action.Invoke);
         }
 
 
