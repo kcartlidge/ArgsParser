@@ -21,8 +21,10 @@ namespace ArgsParser
         private SortedList<string, object> Options = new SortedList<string, object>();
         private readonly Dictionary<string, ArgDetail> knownFlags = new Dictionary<string, ArgDetail>();
         private readonly Dictionary<string, ArgDetail> knownOptions = new Dictionary<string, ArgDetail>();
-        private int maxOptionWidth => knownOptions.Max(x => x.Key.Length);
-        private int maxFlagWidth => knownFlags.Max(x => x.Key.Length);
+        private int maxOptionWidth =>
+            knownOptions.Any() ? knownOptions.Max(x => x.Key.Length) : 1;
+        private int maxFlagWidth =>
+            knownFlags.Any() ? knownFlags.Max(x => x.Key.Length) : 1;
 
         /// <summary>
         /// Create a new Parser based on the given arguments collection.

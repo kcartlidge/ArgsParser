@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21st August 2023 - v4.0.1
+
+- Fix `Help()` when no options or no flags
+
 ## 21st August 2023 - v4.0.0
 
 - Upgraded dependencies
