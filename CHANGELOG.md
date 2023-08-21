@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 21st August 2023 - v4.0.2
+
+- Add `ShowErrors()` method
+- Support indented output
+
 ## 21st August 2023 - v4.0.1
 
 - Fix `Help()` when no options or no flags

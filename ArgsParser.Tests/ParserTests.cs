@@ -463,5 +463,29 @@ namespace ArgsParser.Tests
             Assert.Contains("Option received with no name", result.ArgumentErrors.Values.ToList());
             Assert.Contains("Flag received with no name", result.ArgumentErrors.Values.ToList());
         }
+
+        /// <summary>
+        /// For ease of development you can uncomment this test
+        /// and perform whatever actions needed.
+        /// 
+        /// NO CHANGES TO THIS TEST SHOULD BE CHECKED IN.
+        /// </summary>
+        [Test]
+        public void TestbedForDevelopment()
+        {
+            //var args = new string[] { "-run", "data", "Site Title", "--serve", "-ignore", "-port", "3000" };
+            //var parser = new Parser(args)
+            //    .SupportsOption<int>("port", "Port to start the dev server on", 1337)
+            //    .RequiresOption<string>("read", "Folder to read the site from", "site")
+            //    .RequiresOption<string>("write", "Folder to write the result to")
+            //    .SupportsFlag("serve", "Start the site going in a dev server")
+            //    .SupportsFlag("force", "Overwrite any destination content");
+
+            //parser.Help(2);
+            //parser.Parse();
+            //parser.ShowErrors(2);
+
+            Assert.Pass();
+        }
     }
 }

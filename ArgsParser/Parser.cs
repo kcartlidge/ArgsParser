@@ -74,8 +74,11 @@ namespace ArgsParser
         /// Displays informative help for all flags and options via the Console (stdout).
         /// Groups into sections for clarity, and sorts within those sections.
         /// </summary>
-        public Parser Help()
+        public Parser Help(int indent = 0)
         {
+            if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
+
+            var pad = "".PadLeft(indent);
             var req = "(required)";
             var width = Math.Max(maxOptionWidth, maxFlagWidth);
             var optionWidth = width;
@@ -84,7 +87,7 @@ namespace ArgsParser
             {
                 var required = option.Value.IsRequired ? req : "";
                 var key = option.Key.PadRight(optionWidth);
-                Console.WriteLine($"-{key} <value>   {option.Value.Info} {required}");
+                Console.WriteLine($"{pad}-{key} <value>   {option.Value.Info} {required}");
             }
             var flagWidth = width + (knownOptions.Any() ? " <value>".Length : 0);
             if (knownFlags.Any()) Console.WriteLine();
@@ -92,7 +95,7 @@ namespace ArgsParser
             {
                 var required = flag.Value.IsRequired ? req : "";
                 var key = flag.Key.PadRight(flagWidth);
-                Console.WriteLine($"-{key}   {flag.Value.Info} {required}");
+                Console.WriteLine($"{pad}-{key}   {flag.Value.Info} {required}");
             }
             Console.WriteLine();
             return this;
@@ -194,6 +197,22 @@ namespace ArgsParser
                         AddExpectationError(option.Key, $"Option missing: {option.Key}");
 
             return this;
+        }
+
+        /// <summary>Displays a list of key/value argument error(s).</summary>
+        public void ShowErrors(int indent = 0)
+        {
+            if (HasErrors == false) return;
+            if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
+
+            var pad = "".PadLeft(indent);
+            Console.WriteLine();
+            foreach (var error in ExpectationErrors)
+                Console.WriteLine($"{pad}{error.Value}");
+            foreach (var error in ArgumentErrors)
+                Console.WriteLine($"{pad}{error.Value}");
+            Console.WriteLine();
+            return;
         }
 
         /// <summary>Is the named flag present?</summary>
