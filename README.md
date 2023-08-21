@@ -1,4 +1,4 @@
-# ArgsParser
+# ArgsParser v4.0.3
 
 Easy argument parsing for .Net applications (Core 3 or later).
 Full unit test coverage. Compatible with NetStandard 2.0.

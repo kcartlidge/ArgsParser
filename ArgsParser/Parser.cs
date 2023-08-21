@@ -214,7 +214,6 @@ namespace ArgsParser
         /// <remarks>Does NOT include unknown ones.</remarks>
         public void ShowProvidedArguments(int indent = 0)
         {
-            if (HasErrors == false) return;
             if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
 
             var pad = "".PadLeft(indent);
