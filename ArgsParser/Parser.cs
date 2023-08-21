@@ -77,27 +77,24 @@ namespace ArgsParser
         public Parser Help(int indent = 0)
         {
             if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
+            if (knownOptions.Count + knownFlags.Count == 0) return this;
 
             var pad = "".PadLeft(indent);
             var req = "(required)";
             var width = Math.Max(maxOptionWidth, maxFlagWidth);
-            var optionWidth = width;
-            if (knownOptions.Any()) Console.WriteLine();
             foreach (var option in knownOptions.OrderByDescending(x => x.Value.IsRequired).ThenBy(y => y.Key))
             {
                 var required = option.Value.IsRequired ? req : "";
-                var key = option.Key.PadRight(optionWidth);
+                var key = option.Key.PadRight(width);
                 Console.WriteLine($"{pad}-{key} <value>   {option.Value.Info} {required}");
             }
             var flagWidth = width + (knownOptions.Any() ? " <value>".Length : 0);
-            if (knownFlags.Any()) Console.WriteLine();
             foreach (var flag in knownFlags.OrderByDescending(x => x.Value.IsRequired).ThenBy(y => y.Key))
             {
                 var required = flag.Value.IsRequired ? req : "";
                 var key = flag.Key.PadRight(flagWidth);
                 Console.WriteLine($"{pad}-{key}   {flag.Value.Info} {required}");
             }
-            Console.WriteLine();
             return this;
         }
 
@@ -206,12 +203,30 @@ namespace ArgsParser
             if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
 
             var pad = "".PadLeft(indent);
-            Console.WriteLine();
             foreach (var error in ExpectationErrors)
                 Console.WriteLine($"{pad}{error.Value}");
             foreach (var error in ArgumentErrors)
                 Console.WriteLine($"{pad}{error.Value}");
-            Console.WriteLine();
+            return;
+        }
+
+        /// <summary>Displays a list of key/value arguments provided.</summary>
+        /// <remarks>Does NOT include unknown ones.</remarks>
+        public void ShowProvidedArguments(int indent = 0)
+        {
+            if (HasErrors == false) return;
+            if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
+
+            var pad = "".PadLeft(indent);
+            var width = Math.Max(maxOptionWidth, maxFlagWidth);
+
+            foreach (var item in this.Options)
+            {
+                var key = item.Key.PadRight(width);
+                Console.WriteLine($"{pad}-{key} {item.Value}");
+            }
+            foreach (var item in this.Flags)
+                Console.WriteLine($"{pad}-{item}");
             return;
         }
 

@@ -5,8 +5,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Title>ArgsParser</Title>
     <Authors>K Cartlidge</Authors>
-    <Description>Easy argument parsing for .Net Core applications.</Description>
-    <Summary>Easy argument parsing for .Net Core applications.</Summary>
+    <Description>Easy argument parsing for .Net applications (Core 3 or later).</Description>
+    <Summary>Easy argument parsing for .Net applications (Core 3 or later).</Summary>
     <Copyright>K Cartlidge</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -15,7 +15,7 @@
     <RepositoryType>Git</RepositoryType>
     <PackageTags>args, parsing</PackageTags>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>4.0.1</Version>
+    <Version>4.0.2</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

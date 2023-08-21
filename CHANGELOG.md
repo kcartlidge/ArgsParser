@@ -3,6 +3,8 @@
 ## 21st August 2023 - v4.0.2
 
 - Add `ShowErrors()` method
+- Add `ShowProvidedArguments()` method
+- Remove extra blank output lines
 - Support indented output
 
 ## 21st August 2023 - v4.0.1

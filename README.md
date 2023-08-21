@@ -7,7 +7,7 @@ Available as [a nuget package](https://www.nuget.org/packages/ArgsParser/).
 ## Contents
 
 - [Example usage](#example-usage)
-	- [Auto-generated help](#auto-generated-help)
+- [Auto-generated helper text](#auto-generated-helper-text)
 - [Supported features](#supported-features)
 - [Example input and errors](#example-input-and-errors)
 - [A more detailed example](#a-more-detailed-example)
@@ -17,8 +17,7 @@ Available as [a nuget package](https://www.nuget.org/packages/ArgsParser/).
 ``` csharp
 using ArgsParser;
 
-// ...
-
+var indent = 2;
 var parser = new Parser(args)
     .SupportsOption<int>("port", "Port to start the dev server on", 1337)
     .RequiresOption<string>("read", "Folder to read the site from", "site")
@@ -26,38 +25,58 @@ var parser = new Parser(args)
     .SupportsFlag("serve", "Start the site going in a dev server")
     .SupportsFlag("force", "Overwrite any destination content");
 
-parser.Help();
+parser.Help(indent);
 parser.Parse();
 
-var hasError = parser.HasErrors;
+if (parser.HasErrors)
+{
+    parser.ShowErrors(indent);
+    return;
+}
+parser.ShowProvidedArguments(indent);
+
 var startServing = parser.IsFlagProvided("serve");
 var port = parser.GetOption<int>("port");
 var read = parser.GetOption<string>("read");
-
-// ...
 ```
 
-### Auto-generated help
+## Auto-generated helper text
 
-```cs
-Parser.Help();
-```
+In the examples below, `2` is a left indent of two spaces.
 
-- Required options come first, then optional options, then flags
-- Each of those three blocks is further sorted alphabetically
+#### `Parser.Help(2);`
+
+*(Required options come first, then optional options, then flags.)*
 
 ``` text
--read  <value>   Folder to read the site from (required)
--write <value>   Folder to write the result to (required)
--port  <value>   Port to start the dev server on
+  -read  <value>   Folder to read the site from (required)
+  -write <value>   Folder to write the result to (required)
+  -port  <value>   Port to start the dev server on
+  -force           Overwrite any destination content
+  -serve           Start the site going in a dev server
+```
 
--force           Overwrite any destination content
--serve           Start the site going in a dev server
+#### `Parser.ShowErrors(2)`
+
+``` text
+  Option missing: write
+  Unknown flag: run
+```
+
+#### `Parser.ShowProvidedArguments(2);`
+
+``` text
+  -port  3000
+  -read  in.txt
+  -serve
+  -force
 ```
 
 ## Supported features
 
 - Display help showing supported flags/options
+- Display all errors
+- Display all provided input arguments
 - Required named option/values
 - Optional named option/values
 - Optional named flags
@@ -65,13 +84,13 @@ Parser.Help();
 - Option types support any `IConvertable`, including `int`, `bool`, `DateTime`
 - Accepts either `-` or `--` prefixes
 - Provides two collections of error messages
-	- Expectation errors
-		- Missing required options
-	- Argument errors
-		- Option values of incorrect type
-			- This *may* be switched to be an Expectation error in a future change
-		- Unexpected values (not with an option)
-		- Unknown flags or options
+  - Expectation errors
+    - Missing required options
+  - Argument errors
+    - Option values of incorrect type
+      - This *may* be switched to be an Expectation error in a future change
+    - Unexpected values (not with an option)
+    - Unknown flags or options
 
 ## Example input and errors
 
@@ -100,11 +119,11 @@ Errors come in two collections (the property `Parser.HasErrors` will be `true` i
 Based on the example above the errors (as key/value pairs) will be as follows:
 
 - `ExpectationErrors` keyed by the name of the related option/flag
-	- `write` => `Option missing: write`
+  - `write` => `Option missing: write`
 - `ArgumentErrors` keyed by the 0-based offset into the arguments provided
-	- `0` => `Unknown option: run`
-	- `2` => `Unexpected value: Site Title`
-	- `4` => `Unknown flag: ignore`
+  - `0` => `Unknown option: run`
+  - `2` => `Unexpected value: Site Title`
+  - `4` => `Unknown flag: ignore`
 
 ## A more detailed example
 
@@ -114,12 +133,12 @@ Based on the example above the errors (as key/value pairs) will be as follows:
 var args = new string[] { "-run", "data", "Site Title", "--serve", "-ignore", "-port", "3000" };
 
 var parser = new Parser(args)
-    .SupportsOption<int>("port", "Port to start the dev server on", 1337)
-    .RequiresOption<string>("read", "Folder to read the site from", "site")
-    .RequiresOption<string>("write", "Folder to write the result to")
-    .SupportsFlag("serve", "Start the site going in a dev server")
-    .SupportsFlag("force", "Overwrite any destination content")
-    .Help();
+  .SupportsOption<int>("port", "Port to start the dev server on", 1337)
+  .RequiresOption<string>("read", "Folder to read the site from", "site")
+  .RequiresOption<string>("write", "Folder to write the result to")
+  .SupportsFlag("serve", "Start the site going in a dev server")
+  .SupportsFlag("force", "Overwrite any destination content")
+  .Help();
 
 var result = parser.Parse();
 

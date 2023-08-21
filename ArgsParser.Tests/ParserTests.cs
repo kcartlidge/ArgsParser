@@ -468,12 +468,14 @@ namespace ArgsParser.Tests
         /// For ease of development you can uncomment this test
         /// and perform whatever actions needed.
         /// 
-        /// NO CHANGES TO THIS TEST SHOULD BE CHECKED IN.
+        /// NO CHANGES TO THIS TEST SHOULD BE CHECKED IN
+        /// UNLESS NEW METHODS HAVE BEEN INCLUDED.
         /// </summary>
         [Test]
         public void TestbedForDevelopment()
         {
             //var args = new string[] { "-run", "data", "Site Title", "--serve", "-ignore", "-port", "3000" };
+            //var args = new string[] { "-run", "-read", "in.txt", "--serve", "-force", "-port", "3000" };
             //var parser = new Parser(args)
             //    .SupportsOption<int>("port", "Port to start the dev server on", 1337)
             //    .RequiresOption<string>("read", "Folder to read the site from", "site")
@@ -483,6 +485,7 @@ namespace ArgsParser.Tests
 
             //parser.Help(2);
             //parser.Parse();
+            //parser.ShowProvidedArguments(2);
             //parser.ShowErrors(2);
 
             Assert.Pass();
