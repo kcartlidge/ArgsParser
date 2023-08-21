@@ -8,17 +8,17 @@
     <Description>Easy argument parsing for .Net Core applications.</Description>
     <Summary>Easy argument parsing for .Net Core applications.</Summary>
     <Copyright>K Cartlidge</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/kcartlidge/ArgsParser</PackageProjectUrl>
     <RepositoryUrl>https://github.com/kcartlidge/ArgsParser</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>args, parsing</PackageTags>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>3.0.0</Version>
+    <Version>4.0.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +26,7 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Include="..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 </Project>

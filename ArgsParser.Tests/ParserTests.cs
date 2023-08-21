@@ -15,8 +15,7 @@ namespace ArgsParser.Tests
                 .RequiresOption<string>("read", "Folder to read the site from", "site")
                 .RequiresOption<string>("write", "Folder to write the result to")
                 .SupportsFlag("serve", "Start the site going in a dev server")
-                .SupportsFlag("force", "Overwrite any destination content")
-                .Help();
+                .SupportsFlag("force", "Overwrite any destination content");
 
             var result = parser.Parse();
 

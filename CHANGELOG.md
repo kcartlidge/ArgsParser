@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 21st August 2023 - v4.0.0
+
+- Upgraded dependencies
+- Moved tests from Core 3 to Net 7
+- Fixed cross-platform failure
+	- Caused by a project `PlatformTarget` of `x64`
+- Some README clarifications
+
 ## 7th November 2020 - additional
 
 - Reformatted README
@@ -14,7 +22,7 @@
 
 ## 6th November 2020 - v2.0.0
 
-- Renamed `ArsParser` class to `Parser`
+- Renamed `ArgsParser` class to `Parser`
 	- "Avoids stuttering" as Golang would say
 - Renamed `ParsedFlags` to `Flags`
 - Renamed `ParsedOptions` to `Options`
