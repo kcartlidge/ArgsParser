@@ -1,5 +1,8 @@
 # CHANGELOG
 
+- v4.0.5
+	- Reformatted Help() for clarity
+	- Also now displays defaults, types, and optional legend
 - v4.0.4
 	- Custom option validators (plus tests)
 - v4.0.3

@@ -1,4 +1,4 @@
-# ArgsParser v4.0.4
+# ArgsParser v4.0.5
 
 Easy argument parsing for .Net applications (Core 3 or later).
 Full unit test coverage. Compatible with NetStandard 2.0.
@@ -86,11 +86,17 @@ In the examples below, `2` is a left indent of two spaces.
 *(Required options come first, then optional options, then flags.)*
 
 ``` text
-  -read  <value>   Folder to read the site from (required)
-  -write <value>   Folder to write the result to (required)
-  -port  <value>   Port to start the dev server on
-  -force           Overwrite any destination content
-  -serve           Start the site going in a dev server
+  -read    text        * Folder to read the site from  [site]
+  -write   text        * Folder to write the result to  
+  -apr     number        Annual interest  [3.596]
+  -fee     number        Monthly charge  [19.50]
+  -port    integer       Port to start the dev server on  [1337]
+  -secure  true/false    Serve on HTTPS?  [True]
+  -until   datetime      When to stop serving  [22/08/2023 06:28:13]
+  -force                 Overwrite any destination content
+  -serve                 Start the site going in a dev server
+
+  * means required, values in square brackets are defaults
 ```
 
 #### `Parser.ShowErrors(2)`
@@ -112,6 +118,7 @@ In the examples below, `2` is a left indent of two spaces.
 ## Supported features
 
 - Display help showing supported flags/options
+  - Also shows argument types, defaults, and optional legend
 - Display all errors
 - Display all provided input arguments
 - Required named option/values

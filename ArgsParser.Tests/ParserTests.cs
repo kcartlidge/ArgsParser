@@ -566,6 +566,10 @@ namespace ArgsParser.Tests
             //    .SupportsOption<int>("port", "Port to start the dev server on", 1337)
             //    .RequiresOption<string>("read", "Folder to read the site from", "site")
             //    .RequiresOption<string>("write", "Folder to write the result to")
+            //    .SupportsOption<bool>("secure", "Serve on HTTPS?", true)
+            //    .SupportsOption<decimal>("fee", "Monthly charge", 19.50M)
+            //    .SupportsOption<double>("apr", "Annual interest", 3.5960)
+            //    .SupportsOption<DateTime>("until", "When to stop serving", DateTime.UtcNow)
             //    .SupportsFlag("serve", "Start the site going in a dev server")
             //    .SupportsFlag("force", "Overwrite any destination content");
 

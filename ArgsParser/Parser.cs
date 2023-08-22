@@ -15,6 +15,9 @@ namespace ArgsParser
         /// <summary>Any errors where expectations are not met by the arguments.</summary>
         public SortedList<string, string> ExpectationErrors = new SortedList<string, string>();
 
+        /// <summary>Show explanatory text below options/flags in Help()?</summary>
+        public bool ShowHelpLegend = true;
+
         private bool parsed = false;
         private readonly string[] rawArgs;
         private List<string> Flags = new List<string>();
@@ -102,25 +105,58 @@ namespace ArgsParser
         /// </summary>
         public Parser Help(int indent = 0)
         {
+            // Sanity checks.
             if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
             if (knownOptions.Count + knownFlags.Count == 0) return this;
 
+            // Layout calculations.
             var pad = "".PadLeft(indent);
-            var req = "(required)";
+            var req = "*";
             var width = Math.Max(maxOptionWidth, maxFlagWidth);
-            foreach (var option in knownOptions.OrderByDescending(x => x.Value.IsRequired).ThenBy(y => y.Key))
+            var typeWidth = knownOptions.Max(x => x.Value.ArgTypeName.Length);
+            var flagWidth = width + (knownOptions.Any() ? typeWidth + 2 : 0);
+
+            // Options.
+            foreach (var option in knownOptions
+                .OrderByDescending(x => x.Value.IsRequired)
+                .ThenBy(y => y.Key))
             {
-                var required = option.Value.IsRequired ? req : "";
+                var typename = option.Value.ArgTypeName.PadRight(typeWidth);
+                var required = option.Value.IsRequired ? req : " ";
                 var key = option.Key.PadRight(width);
-                Console.WriteLine($"{pad}-{key} <value>   {option.Value.Info} {required}");
+                var def = option.Value.HasDefault
+                    ? $"[{option.Value.DefaultValue}]"
+                    : "";
+
+                Console.WriteLine($"{pad}-{key}  {typename}  {required} {option.Value.Info}  {def}");
             }
-            var flagWidth = width + (knownOptions.Any() ? " <value>".Length : 0);
-            foreach (var flag in knownFlags.OrderByDescending(x => x.Value.IsRequired).ThenBy(y => y.Key))
+
+            // Flags.
+            foreach (var flag in knownFlags
+                .OrderByDescending(x => x.Value.IsRequired)
+                .ThenBy(y => y.Key))
             {
-                var required = flag.Value.IsRequired ? req : "";
+                var required = flag.Value.IsRequired ? req : " ";
                 var key = flag.Key.PadRight(flagWidth);
-                Console.WriteLine($"{pad}-{key}   {flag.Value.Info} {required}");
+                Console.WriteLine($"{pad}-{key}  {required} {flag.Value.Info}");
             }
+
+            // Add legend if any items are required or have a default.
+            if (ShowHelpLegend)
+            {
+                var legend = new List<string>();
+                if (knownOptions.Any(x => x.Value.IsRequired) || knownFlags.Any(x => x.Value.IsRequired))
+                    legend.Add($"* means required");
+                if (knownOptions.Any(x => x.Value.HasDefault))
+                    legend.Add($"values in square brackets are defaults");
+                if (legend.Any())
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(pad + string.Join(", ", legend));
+                    Console.WriteLine();
+                }
+            }
+
             return this;
         }
 
@@ -142,11 +178,10 @@ namespace ArgsParser
 
                 if (arg.HasDash)
                 {
-                    // This and previous both dashes, so previous must be a flag.
-                    if (inDash)
-                        args[i - 1].ArgType = ArgType.Flag;
+                    // This and previous both dashes? Previous must be a flag.
+                    if (inDash) args[i - 1].ArgType = ArgType.Flag;
 
-                    // Assume this will just be a flag (options are patched up below).
+                    // Assume is a flag (no lookahead; patched to option below).
                     arg.ArgType = ArgType.Flag;
                     inDash = true;
                 }
@@ -154,7 +189,7 @@ namespace ArgsParser
                 {
                     if (inDash)
                     {
-                        // Not a dash, but previous one was, so must be the value for an option.
+                        // Not a dash, previous one was, must an option's value.
                         args[i - 1].ArgType = ArgType.Option;
                         args[i - 1].Value = arg.Original;
                         arg.ArgType = ArgType.Skip;
