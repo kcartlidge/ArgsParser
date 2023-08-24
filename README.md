@@ -1,4 +1,4 @@
-# ArgsParser v4.0.5
+# ArgsParser v4.0.6
 
 Easy argument parsing for .Net applications (Core 3 or later).
 Full unit test coverage. Compatible with NetStandard 2.0.
@@ -87,7 +87,7 @@ In the examples below, `2` is a left indent of two spaces.
 
 ``` text
   -read    text        * Folder to read the site from  [site]
-  -write   text        * Folder to write the result to  
+  -write   text        * Folder to write the result to
   -apr     number        Annual interest  [3.596]
   -fee     number        Monthly charge  [19.50]
   -port    integer       Port to start the dev server on  [1337]
@@ -96,7 +96,7 @@ In the examples below, `2` is a left indent of two spaces.
   -force                 Overwrite any destination content
   -serve                 Start the site going in a dev server
 
-  * means required, values in square brackets are defaults
+  * is required, values in square brackets are defaults
 ```
 
 #### `Parser.ShowErrors(2)`
@@ -114,6 +114,32 @@ In the examples below, `2` is a left indent of two spaces.
   -serve
   -force
 ```
+
+#### `Parser.GetProvidedArguments()`
+
+This doesn't directly generate output text; it returns a dictionary of key/value pairs for the provided arguments.
+The `key` is the name of the matching option or flag.
+The `value` (returned as an `object`) contains either `null` for a flag or the type-converted input for an option.
+
+Example usage:
+
+```cs
+Console.Write("MyApp");
+foreach (var item in parser.GetProvidedArguments())
+{
+    if (item.Value == null) Console.Write($" -{item.Key}");
+    else Console.Write($" -{item.Key} \"{item.Value}\"");
+}
+```
+
+Assuming `MyApp` was the name of your application, this would recreate the command used when it was called. For example:
+
+```
+MyApp -force -port "3000" -read "in.txt" -serve
+```
+
+Notice that the sort order is alphabetical.
+You can easily isolate options and flags using something like `.Where(x => x.Value == null)`.
 
 ## Supported features
 

@@ -146,7 +146,7 @@ namespace ArgsParser
             {
                 var legend = new List<string>();
                 if (knownOptions.Any(x => x.Value.IsRequired) || knownFlags.Any(x => x.Value.IsRequired))
-                    legend.Add($"* means required");
+                    legend.Add($"* is required");
                 if (knownOptions.Any(x => x.Value.HasDefault))
                     legend.Add($"values in square brackets are defaults");
                 if (legend.Any())
@@ -280,8 +280,23 @@ namespace ArgsParser
             return;
         }
 
+        /// <summary>
+        /// Fetch a list of key/value arguments provided, including flags
+        /// which are in the result but with a null value (reliable as an
+        /// option must have a value in order to be considered as having
+        /// been provided).
+        /// </summary>
+        /// <remarks>Does NOT include unknown options/flags.</remarks>
+        public SortedList<string, object> GetProvidedArguments()
+        {
+            var result = new SortedList<string, object>();
+            foreach (var item in this.Options) result.Add(item.Key, item.Value);
+            foreach (var item in this.Flags) result.Add(item, null);
+            return result;
+        }
+
         /// <summary>Displays a list of key/value arguments provided.</summary>
-        /// <remarks>Does NOT include unknown ones.</remarks>
+        /// <remarks>Does NOT include unknown options/flags.</remarks>
         public void ShowProvidedArguments(int indent = 0)
         {
             if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");

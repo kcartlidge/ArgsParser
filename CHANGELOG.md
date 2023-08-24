@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- v4.0.6
+  - Added `GetProvidedArguments` method
 - v4.0.5
 	- Reformatted Help() for clarity
 	- Also now displays defaults, types, and optional legend

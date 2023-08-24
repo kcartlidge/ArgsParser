@@ -550,17 +550,32 @@ namespace ArgsParser.Tests
             Assert.Contains("Flag received with no name", result.ArgumentErrors.Values.ToList());
         }
 
+        [Test]
+        public void OptionsAndFlagsProvided_GetProvidedArguments_ReturnsProvided()
+        {
+            var parser = new Parser(new string[] { "-f1", "-f2", "-s1", "a", "-s2", "b" })
+                .RequiresOption<string>("s1", "A string value")
+                .RequiresOption<string>("s2", "A string value")
+                .SupportsFlag("f1", "A flag")
+                .SupportsFlag("f2", "A flag");
+
+            var result = parser.Parse().GetProvidedArguments();
+
+            Assert.AreEqual(4, result.Count);
+            Assert.AreEqual(parser.GetOption<string>("s1"), result["s1"]);
+            Assert.AreEqual(parser.GetOption<string>("s2"), result["s2"]);
+            Assert.Contains("f1", result.Keys.ToList());
+            Assert.Contains("f2", result.Keys.ToList());
+        }
+
         /// <summary>
         /// For ease of development you can uncomment this test
         /// and perform whatever actions needed.
-        /// 
-        /// NO CHANGES TO THIS TEST SHOULD BE CHECKED IN
-        /// UNLESS NEW METHODS HAVE BEEN INCLUDED.
         /// </summary>
         [Test]
         public void TestbedForDevelopment()
         {
-            //var args = new string[] { "-run", "data", "Site Title", "--serve", "-ignore", "-port", "3000" };
+            ////var args = new string[] { "-run", "data", "Site Title", "--serve", "-ignore", "-port", "3000" };
             //var args = new string[] { "-run", "-read", "in.txt", "--serve", "-force", "-port", "3000" };
             //var parser = new Parser(args)
             //    .SupportsOption<int>("port", "Port to start the dev server on", 1337)
@@ -575,8 +590,22 @@ namespace ArgsParser.Tests
 
             //parser.Help(2);
             //parser.Parse();
+            //Console.WriteLine();
+            //Console.WriteLine("ShowProvidedArguments()");
             //parser.ShowProvidedArguments(2);
+
+            //Console.WriteLine();
+            //Console.WriteLine("ShowErrors()");
             //parser.ShowErrors(2);
+
+            //Console.WriteLine();
+            //Console.WriteLine("GetProvidedArguments()");
+            //Console.Write("CreateCover");
+            //foreach (var item in parser.GetProvidedArguments())
+            //{
+            //    if (item.Value == null) Console.Write($" -{item.Key}");
+            //    else Console.Write($" -{item.Key} \"{item.Value}\"");
+            //}
 
             Assert.Pass();
         }
