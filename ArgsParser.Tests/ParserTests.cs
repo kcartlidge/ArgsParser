@@ -550,38 +550,47 @@ namespace ArgsParser.Tests
             Assert.Contains("Flag received with no name", result.ArgumentErrors.Values.ToList());
         }
 
+        /// <summary>
+        /// GetProvided should be returning in the order the options and flags
+        /// were registered with the parser, not the order in the inputs.
+        /// </summary>
         [Test]
-        public void OptionsAndFlagsProvided_GetProvidedArguments_ReturnsProvided()
+        public void OptionsAndFlagsProvided_GetProvided_ReturnsCorrectlyOrdered()
         {
-            var parser = new Parser(new string[] { "-f1", "-f2", "-s1", "a", "-s2", "b" })
+            var parser = new Parser(new string[] { "-f2", "-f1", "-s2", "a", "-s1", "b" })
                 .RequiresOption<string>("s1", "A string value")
                 .RequiresOption<string>("s2", "A string value")
                 .SupportsFlag("f1", "A flag")
                 .SupportsFlag("f2", "A flag");
 
-            var result = parser.Parse().GetProvidedArguments();
+            var result = parser.Parse().GetProvided();
 
             Assert.AreEqual(4, result.Count);
             Assert.AreEqual(parser.GetOption<string>("s1"), result["s1"]);
             Assert.AreEqual(parser.GetOption<string>("s2"), result["s2"]);
             Assert.Contains("f1", result.Keys.ToList());
             Assert.Contains("f2", result.Keys.ToList());
+            Assert.AreEqual("s1", result.Keys.ToList()[0]);
+            Assert.AreEqual("s2", result.Keys.ToList()[1]);
+            Assert.AreEqual("f1", result.Keys.ToList()[2]);
+            Assert.AreEqual("f2", result.Keys.ToList()[3]);
         }
 
         /// <summary>
         /// For ease of development you can uncomment this test
-        /// and perform whatever actions needed.
+        /// and perform whatever actions are needed. Re-comment
+        /// it before committing.
         /// </summary>
         [Test]
         public void TestbedForDevelopment()
         {
             ////var args = new string[] { "-run", "data", "Site Title", "--serve", "-ignore", "-port", "3000" };
-            //var args = new string[] { "-run", "-read", "in.txt", "--serve", "-force", "-port", "3000" };
+            //var args = new string[] { "-run", "-Read", "IN.TXT", "--serVe", "-force", "-port", "3000" };
             //var parser = new Parser(args)
             //    .SupportsOption<int>("port", "Port to start the dev server on", 1337)
+            //    .RequiresOption<bool>("secure", "Serve on HTTPS?")
             //    .RequiresOption<string>("read", "Folder to read the site from", "site")
             //    .RequiresOption<string>("write", "Folder to write the result to")
-            //    .SupportsOption<bool>("secure", "Serve on HTTPS?", true)
             //    .SupportsOption<decimal>("fee", "Monthly charge", 19.50M)
             //    .SupportsOption<double>("apr", "Annual interest", 3.5960)
             //    .SupportsOption<DateTime>("until", "When to stop serving", DateTime.UtcNow)
@@ -591,21 +600,26 @@ namespace ArgsParser.Tests
             //parser.Help(2);
             //parser.Parse();
             //Console.WriteLine();
-            //Console.WriteLine("ShowProvidedArguments()");
-            //parser.ShowProvidedArguments(2);
+            //Console.WriteLine("ShowProvided()");
+            //parser.ShowProvided(2);
 
             //Console.WriteLine();
             //Console.WriteLine("ShowErrors()");
             //parser.ShowErrors(2);
 
             //Console.WriteLine();
-            //Console.WriteLine("GetProvidedArguments()");
-            //Console.Write("CreateCover");
-            //foreach (var item in parser.GetProvidedArguments())
+            //Console.WriteLine("GetProvided()");
+            //Console.Write("  CreateCover");
+            //foreach (var item in parser.GetProvided())
             //{
             //    if (item.Value == null) Console.Write($" -{item.Key}");
             //    else Console.Write($" -{item.Key} \"{item.Value}\"");
             //}
+            //Console.WriteLine();
+
+            //Console.WriteLine();
+            //Console.WriteLine("GetProvidedAsCommandArgs()");
+            //Console.WriteLine(parser.GetProvidedAsCommandArgs());
 
             Assert.Pass();
         }

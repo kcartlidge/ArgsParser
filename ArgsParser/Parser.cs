@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace ArgsParser
 {
@@ -13,26 +14,44 @@ namespace ArgsParser
         public SortedList<int, string> ArgumentErrors = new SortedList<int, string>();
 
         /// <summary>Any errors where expectations are not met by the arguments.</summary>
-        public SortedList<string, string> ExpectationErrors = new SortedList<string, string>();
+        public Dictionary<string, string> ExpectationErrors = new Dictionary<string, string>();
 
         /// <summary>Show explanatory text below options/flags in Help()?</summary>
         public bool ShowHelpLegend = true;
 
         private bool parsed = false;
+        private int NextSequence = 0;
         private readonly string[] rawArgs;
+
+        /// <summary>Options provided by (user) input args.</summary>
+        private Dictionary<string, object> Options = new Dictionary<string, object>();
+
+        /// <summary>Flags provided by (user) input args.</summary>
         private List<string> Flags = new List<string>();
-        private SortedList<string, object> Options = new SortedList<string, object>();
+
+        /// <summary>Registered custom validators.</summary>
         private readonly Dictionary<string, Func<string, object, List<string>>> validators = new Dictionary<string, Func<string, object, List<string>>>();
-        private readonly Dictionary<string, ArgDetail> knownFlags = new Dictionary<string, ArgDetail>();
-        private readonly Dictionary<string, ArgDetail> knownOptions = new Dictionary<string, ArgDetail>();
+
+        /// <summary>The definitive list of known options and flags.</summary>
+        private readonly List<ArgDetail> known = new List<ArgDetail>();
+
+        /// <summary>Options from the 'known' list.</summary>
+        private List<ArgDetail> knownOptions => known.Where(x => x.IsOption).ToList();
+
+        /// <summary>Flags from the 'known' list.</summary>
+        private List<ArgDetail> knownFlags => known.Where(x => x.IsFlag).ToList();
+
+        /// <summary>Number of characters in the longest option name.</summary>
         private int maxOptionWidth =>
-            knownOptions.Any() ? knownOptions.Max(x => x.Key.Length) : 1;
+            knownOptions.Any() ? knownOptions.Max(x => x.Name.Length) : 1;
+
+        /// <summary>Number of characters in the longest flag name.</summary>
         private int maxFlagWidth =>
-            knownFlags.Any() ? knownFlags.Max(x => x.Key.Length) : 1;
+            knownFlags.Any() ? knownFlags.Max(x => x.Name.Length) : 1;
 
         /// <summary>
         /// Create a new Parser based on the given arguments collection.
-        /// Usually, but not necessarily, this is the args provided when an app starts up.
+        /// Usually, but not necessarily, this is the args provided at app start.
         /// </summary>
         public Parser(string[] args)
         {
@@ -45,9 +64,14 @@ namespace ArgsParser
         /// <param name="defaultValue">Optional default value.</param>
         public Parser SupportsOption<T>(string optionName, string info, object defaultValue = null)
         {
-            optionName = optionName.ToLowerInvariant().Trim().TrimStart('-').Trim();
-
-            knownOptions.Add(optionName, new ArgDetail(typeof(T), false, info, defaultValue));
+            known.Add(new ArgDetail(
+                Normalise(optionName),
+                NextSequence++,
+                typeof(T),
+                false,
+                true,
+                info,
+                defaultValue));
             return this;
         }
 
@@ -57,9 +81,14 @@ namespace ArgsParser
         /// <param name="defaultValue">Optional default value.</param>
         public Parser RequiresOption<T>(string optionName, string info, object defaultValue = null)
         {
-            optionName = optionName.ToLowerInvariant().Trim().TrimStart('-').Trim();
-
-            knownOptions.Add(optionName, new ArgDetail(typeof(T), true, info, defaultValue));
+            known.Add(new ArgDetail(
+                Normalise(optionName),
+                NextSequence++,
+                typeof(T),
+                true,
+                true,
+                info,
+                defaultValue));
             return this;
         }
 
@@ -68,9 +97,14 @@ namespace ArgsParser
         /// <param name="info">Descriptive text for the generated Help().</param>
         public Parser SupportsFlag(string flagName, string info)
         {
-            flagName = flagName.ToLowerInvariant().Trim().TrimStart('-').Trim();
-
-            knownFlags.Add(flagName, new ArgDetail(typeof(bool), false, info, null));
+            known.Add(new ArgDetail(
+                Normalise(flagName),
+                NextSequence++,
+                typeof(bool),
+                false,
+                false,
+                info,
+                null));
             return this;
         }
 
@@ -89,8 +123,8 @@ namespace ArgsParser
             string option,
             Func<string, object, List<string>> validate)
         {
-            var key = (option ?? "").Trim().ToLowerInvariant();
-            if (knownOptions.ContainsKey(key) == false)
+            var key = Normalise(option ?? "");
+            if (KnowsOption(key) == false)
                 throw new ArgumentException($"Cannot add a validator for unknown option '{key}'.");
             if (validators.ContainsKey(key))
                 throw new ArgumentException($"A validator for {key} has already been added.");
@@ -113,41 +147,38 @@ namespace ArgsParser
             var pad = "".PadLeft(indent);
             var req = "*";
             var width = Math.Max(maxOptionWidth, maxFlagWidth);
-            var typeWidth = knownOptions.Max(x => x.Value.ArgTypeName.Length);
+            var typeWidth = knownOptions.Max(x => x.ArgTypeName.Length);
             var flagWidth = width + (knownOptions.Any() ? typeWidth + 2 : 0);
 
-            // Options.
-            foreach (var option in knownOptions
-                .OrderByDescending(x => x.Value.IsRequired)
-                .ThenBy(y => y.Key))
+            // Show options and flags by sequence added.
+            foreach (var item in known.OrderBy(x => x.Sequence).ThenBy(x => x.Name))
             {
-                var typename = option.Value.ArgTypeName.PadRight(typeWidth);
-                var required = option.Value.IsRequired ? req : " ";
-                var key = option.Key.PadRight(width);
-                var def = option.Value.HasDefault
-                    ? $"[{option.Value.DefaultValue}]"
-                    : "";
+                if (item.IsOption)
+                {
+                    var typename = item.ArgTypeName.PadRight(typeWidth);
+                    var required = item.IsRequired ? req : " ";
+                    var key = item.Name.PadRight(width);
+                    var def = item.HasDefault
+                        ? $"[{item.DefaultValue}]"
+                        : "";
 
-                Console.WriteLine($"{pad}-{key}  {typename}  {required} {option.Value.Info}  {def}");
-            }
-
-            // Flags.
-            foreach (var flag in knownFlags
-                .OrderByDescending(x => x.Value.IsRequired)
-                .ThenBy(y => y.Key))
-            {
-                var required = flag.Value.IsRequired ? req : " ";
-                var key = flag.Key.PadRight(flagWidth);
-                Console.WriteLine($"{pad}-{key}  {required} {flag.Value.Info}");
+                    Console.WriteLine($"{pad}-{key}  {typename}  {required} {item.Info}  {def}");
+                }
+                else if (item.IsFlag)
+                {
+                    var required = item.IsRequired ? req : " ";
+                    var key = item.Name.PadRight(flagWidth);
+                    Console.WriteLine($"{pad}-{key}  {required} {item.Info}");
+                }
             }
 
             // Add legend if any items are required or have a default.
             if (ShowHelpLegend)
             {
                 var legend = new List<string>();
-                if (knownOptions.Any(x => x.Value.IsRequired) || knownFlags.Any(x => x.Value.IsRequired))
+                if (known.Any(x => x.IsRequired))
                     legend.Add($"* is required");
-                if (knownOptions.Any(x => x.Value.HasDefault))
+                if (known.Any(x => x.HasDefault))
                     legend.Add($"values in square brackets are defaults");
                 if (legend.Any())
                 {
@@ -213,7 +244,7 @@ namespace ArgsParser
                     case ArgType.Flag:
                         if (arg.Value.Name.Length == 0)
                             AddArgumentError(arg.Key, $"Flag received with no name");
-                        else if (knownFlags.ContainsKey(arg.Value.Name) == false)
+                        else if (KnowsFlag(arg.Value.Name) == false)
                             AddArgumentError(arg.Key, $"Unknown flag: {arg.Value.Name}");
                         else
                             AddFlag(arg.Value.Name);
@@ -221,11 +252,11 @@ namespace ArgsParser
                     case ArgType.Option:
                         if (arg.Value.Name.Length == 0)
                             AddArgumentError(arg.Key, $"Option received with no name");
-                        else if (knownOptions.ContainsKey(arg.Value.Name) == false)
+                        else if (KnowsOption(arg.Value.Name) == false)
                             AddArgumentError(arg.Key, $"Unknown option: {arg.Value.Name}");
                         else
                         {
-                            var o = knownOptions[arg.Value.Name];
+                            var o = GetOption(arg.Value.Name);
                             AddOption(arg.Value.Name);
                             try
                             {
@@ -246,13 +277,13 @@ namespace ArgsParser
             // Check for expectation errors (things expected but missing).
             // In brief, enforce any options requirements.
             // No required flags, as that would force the value to always be true.
-            foreach (var option in knownOptions.Where(x => x.Value.IsRequired))
-                if (Options.ContainsKey(option.Key) == false)
+            foreach (var option in knownOptions.Where(x => x.IsRequired).OrderBy(x => x.Sequence))
+                if (Options.ContainsKey(option.Name) == false)
                     // Apply a default if provided, else it's an error.
-                    if (option.Value.DefaultValue != null)
-                        Options.Add(option.Key, option.Value.DefaultValue);
+                    if (option.DefaultValue != null)
+                        Options.Add(option.Name, option.DefaultValue);
                     else
-                        AddExpectationError(option.Key, $"Option missing: {option.Key}");
+                        AddExpectationError(option.Name, $"Option missing: {option.Name}");
 
             // Apply any custom validators to the options with values.
             foreach (var option in Options.Where(x => validators.ContainsKey(x.Key)))
@@ -273,67 +304,92 @@ namespace ArgsParser
             if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
 
             var pad = "".PadLeft(indent);
-            foreach (var error in ExpectationErrors)
-                Console.WriteLine($"{pad}{error.Value}");
+            foreach (var item in known.OrderBy(x => x.Sequence))
+            {
+                foreach (var error in ExpectationErrors.Where(x => x.Key == item.Name))
+                    Console.WriteLine($"{pad}{error.Value}");
+            }
             foreach (var error in ArgumentErrors)
                 Console.WriteLine($"{pad}{error.Value}");
             return;
         }
 
         /// <summary>
-        /// Fetch a list of key/value arguments provided, including flags
-        /// which are in the result but with a null value (reliable as an
-        /// option must have a value in order to be considered as having
-        /// been provided).
+        /// Fetch a list of MATCHED key/value arguments provided, including
+        /// flags - which are in the result but with a null value (matched
+        /// options always have values).
         /// </summary>
         /// <remarks>Does NOT include unknown options/flags.</remarks>
-        public SortedList<string, object> GetProvidedArguments()
+        public Dictionary<string, object> GetProvided()
         {
-            var result = new SortedList<string, object>();
-            foreach (var item in this.Options) result.Add(item.Key, item.Value);
-            foreach (var item in this.Flags) result.Add(item, null);
+            var result = new Dictionary<string, object>();
+            foreach (var item in known.OrderBy(x => x.Sequence))
+            {
+                foreach (var option in this.Options)
+                    if (option.Key == item.Name) result.Add(option.Key, option.Value);
+                foreach (var flag in this.Flags)
+                    if (flag == item.Name) result.Add(flag, null);
+            }
             return result;
         }
 
-        /// <summary>Displays a list of key/value arguments provided.</summary>
+        /// <summary>
+        /// Returns the MATCHED key/value arguments provided, based on
+        /// those returned by GetProvided(), as a string in the form of
+        /// command line arguments.
+        /// </summary>
         /// <remarks>Does NOT include unknown options/flags.</remarks>
-        public void ShowProvidedArguments(int indent = 0)
+        public string GetProvidedAsCommandArgs()
+        {
+            var result = new StringBuilder();
+            foreach (var item in GetProvided())
+            {
+                if (result.Length > 0) result.Append(' ');
+                if (item.Value == null) result.Append($"-{item.Key}");
+                else result.Append($"-{item.Key} \"{item.Value}\"");
+            }
+            return result.ToString();
+        }
+
+        /// <summary>
+        /// Display a list of MATCHED key/value arguments provided, based on
+        /// those returned by GetProvided().
+        /// </summary>
+        /// <remarks>Does NOT include unknown options/flags.</remarks>
+        public void ShowProvided(int indent = 0)
         {
             if (indent < 0) throw new Exception($"A negative indent ({indent}) is not allowed.");
 
             var pad = "".PadLeft(indent);
             var width = Math.Max(maxOptionWidth, maxFlagWidth);
 
-            foreach (var item in this.Options)
+            var provided = GetProvided();
+            foreach (var item in provided)
             {
-                var key = item.Key.PadRight(width);
-                Console.WriteLine($"{pad}-{key} {item.Value}");
+                var (key, value) = (item.Key.PadRight(width), item.Value);
+                if (value == null)
+                    Console.WriteLine($"{pad}-{key}");
+                else
+                    Console.WriteLine($"{pad}-{key} {value}");
             }
-            foreach (var item in this.Flags)
-                Console.WriteLine($"{pad}-{item}");
-            return;
-        }
-
-        /// <summary>Is the named flag present?</summary>
-        public bool IsFlagProvided(string flagName)
-        {
-            flagName = flagName.ToLowerInvariant().Trim();
-
-            if (knownFlags.ContainsKey(flagName) == false)
-                throw new ArgumentException($"Unknown flag: {flagName}");
-
-            return (Flags.Contains(flagName));
         }
 
         /// <summary>Is the named option present?</summary>
         public bool IsOptionProvided(string optionName)
         {
-            optionName = optionName.ToLowerInvariant().Trim();
-
-            if (knownOptions.ContainsKey(optionName) == false)
+            optionName = Normalise(optionName);
+            if (KnowsOption(optionName) == false)
                 throw new ArgumentException($"Unknown option: {optionName}");
-
             return (Options.ContainsKey(optionName));
+        }
+
+        /// <summary>Is the named flag present?</summary>
+        public bool IsFlagProvided(string flagName)
+        {
+            flagName = Normalise(flagName);
+            if (KnowsFlag(flagName) == false)
+                throw new ArgumentException($"Unknown flag: {flagName}");
+            return (Flags.Contains(flagName));
         }
 
         /// <summary>
@@ -344,30 +400,68 @@ namespace ArgsParser
         /// </summary>
         public T GetOption<T>(string optionName)
         {
-            optionName = optionName.ToLowerInvariant().Trim();
+            optionName = Normalise(optionName);
 
             // Unknown option.
-            if (knownOptions.ContainsKey(optionName) == false)
+            if (KnowsOption(optionName) == false)
                 throw new ArgumentException($"Unknown option: {optionName}");
 
             // Option type and generic type on this call differ.
-            if (typeof(T) != knownOptions[optionName].ArgType)
+            if (typeof(T) != GetOption(optionName).ArgType)
                 throw new InvalidCastException($"Incorrect type getting option {optionName}");
 
             // Option value was provided (default is already applied if needed).
-            if (IsOptionProvided(optionName))
-                return (T)Options[optionName];
+            if (IsOptionProvided(optionName)) return (T)Options[optionName];
 
             // No option provided, but there is a default given.
-            if (knownOptions[optionName].DefaultValue != null)
-                return (T)knownOptions[optionName].DefaultValue;
+            if (GetOption(optionName).DefaultValue != null) return (T)GetOption(optionName).DefaultValue;
 
             // Fallback on the default value for the return type.
             return default;
         }
 
+
         /* SUPPORT */
 
+        /// <summary>Tidies up a name to ensure consistent behaviour.</summary>
+        private string Normalise(string original)
+        {
+            return original.ToLowerInvariant().Trim().TrimStart('-').Trim();
+        }
+
+        /// <summary>Do we already know about this option?</summary>
+        private bool KnowsOption(string name)
+        {
+            name = Normalise(name);
+            return known.Any(x => x.Name == name && x.IsOption);
+        }
+
+        /// <summary>Do we already know about this flag?</summary>
+        private bool KnowsFlag(string name)
+        {
+            name = Normalise(name);
+            return known.Any(x => x.Name == name && x.IsFlag);
+        }
+
+        /// <summary>
+        /// Fetch a named option (assumes KnowsOption checked already).
+        /// </summary>
+        private ArgDetail GetOption(string name)
+        {
+            name = Normalise(name);
+            return known.First(x => x.Name == name && x.IsOption);
+        }
+
+        /// <summary>
+        /// Fetch a named flag (assumes KnowsFlag checked already).
+        /// </summary>
+        private ArgDetail GetFlag(string name)
+        {
+            name = Normalise(name);
+            return known.First(x => x.Name == name && x.IsFlag);
+        }
+
+        /// <summary>Add a non-specific error related to a passed argument.</summary>
         private void AddArgumentError(int sequence, string message)
         {
             if (ArgumentErrors.ContainsKey(sequence))
@@ -376,6 +470,7 @@ namespace ArgsParser
                 ArgumentErrors.Add(sequence, message);
         }
 
+        /// <summary>Add an error for an argument for a specific option.</summary>
         private void AddExpectationError(string key, string message)
         {
             if (ExpectationErrors.ContainsKey(key))
@@ -384,14 +479,18 @@ namespace ArgsParser
                 ExpectationErrors.Add(key, message);
         }
 
+        /// <summary>Add a flag as provided in the arguments.</summary>
         private void AddFlag(string flagName)
         {
+            flagName = Normalise(flagName);
             if (Flags.Contains(flagName)) return;
             Flags.Add(flagName);
         }
 
+        /// <summary>Add an option as provided in the arguments.</summary>
         private void AddOption(string optionName)
         {
+            optionName = Normalise(optionName);
             if (Options.ContainsKey(optionName)) return;
             Options.Add(optionName, null);
         }

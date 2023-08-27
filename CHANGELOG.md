@@ -1,7 +1,14 @@
 # CHANGELOG
 
+- v5.0.0
+  - Auto-generated text and collections respect option/flag creation order
+	  - Previously outputs/results were sorted alphabetically
+		- Options/flags now include a `Sequence` field
+	- Internals maintain a single collection of options/flags
+	  - Previously these were separate and handled individually
+	- Added `GetProvidedAsCommandArgs` method
 - v4.0.6
-  - Added `GetProvidedArguments` method
+  - Added `GetProvided` method
 - v4.0.5
 	- Reformatted Help() for clarity
 	- Also now displays defaults, types, and optional legend

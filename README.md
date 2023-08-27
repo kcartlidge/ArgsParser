@@ -1,4 +1,4 @@
-# ArgsParser v4.0.6
+# ArgsParser v5.0.0
 
 Easy argument parsing for .Net applications (Core 3 or later).
 Full unit test coverage. Compatible with NetStandard 2.0.
@@ -83,14 +83,14 @@ In the examples below, `2` is a left indent of two spaces.
 
 #### `Parser.Help(2);`
 
-*(Required options come first, then optional options, then flags.)*
+*These are displayed in the order they were created on the parser instance in your code.*
 
 ``` text
+  -port    integer       Port to start the dev server on  [1337]
   -read    text        * Folder to read the site from  [site]
   -write   text        * Folder to write the result to
   -apr     number        Annual interest  [3.596]
   -fee     number        Monthly charge  [19.50]
-  -port    integer       Port to start the dev server on  [1337]
   -secure  true/false    Serve on HTTPS?  [True]
   -until   datetime      When to stop serving  [22/08/2023 06:28:13]
   -force                 Overwrite any destination content
@@ -111,11 +111,11 @@ In the examples below, `2` is a left indent of two spaces.
 ``` text
   -port  3000
   -read  in.txt
-  -serve
   -force
+  -serve
 ```
 
-#### `Parser.GetProvidedArguments()`
+#### `Parser.GetProvided()`
 
 This doesn't directly generate output text; it returns a dictionary of key/value pairs for the provided arguments.
 The `key` is the name of the matching option or flag.
@@ -125,7 +125,7 @@ Example usage:
 
 ```cs
 Console.Write("MyApp");
-foreach (var item in parser.GetProvidedArguments())
+foreach (var item in parser.GetProvided())
 {
     if (item.Value == null) Console.Write($" -{item.Key}");
     else Console.Write($" -{item.Key} \"{item.Value}\"");
@@ -135,11 +135,22 @@ foreach (var item in parser.GetProvidedArguments())
 Assuming `MyApp` was the name of your application, this would recreate the command used when it was called. For example:
 
 ```
-MyApp -force -port "3000" -read "in.txt" -serve
+MyApp -port "3000" -read "in.txt" -force -serve
 ```
 
-Notice that the sort order is alphabetical.
+*These are returned in the order they were created on the parser instance in your code.*
 You can easily isolate options and flags using something like `.Where(x => x.Value == null)`.
+
+#### `GetProvidedAsCommandArgs()`
+
+This automatically wraps up the result of `Parser.GetProvided()` as a space-delimited command argument string.
+In other words, it provides the same output as the example of that method (minus the app name prefix).
+
+Based on the `GetProvided` example, it would return:
+
+```
+-port "3000" -read "in.txt" -force -serve
+```
 
 ## Supported features
 
