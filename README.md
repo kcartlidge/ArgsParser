@@ -1,4 +1,4 @@
-# ArgsParser v5.0.0
+# ArgsParser
 
 Easy argument parsing for .Net applications (Core 3 or later).
 Full unit test coverage. Compatible with NetStandard 2.0.
@@ -18,7 +18,7 @@ Available as [a nuget package](https://www.nuget.org/packages/ArgsParser/).
 ``` csharp
 using ArgsParser;
 
-var indent = 2;
+// Define the options and flags required or supported.
 var parser = new Parser(args)
     .SupportsOption<int>("port", "Port to start the dev server on", 1337)
     .RequiresOption<string>("read", "Folder to read the site from", "site")
@@ -26,16 +26,23 @@ var parser = new Parser(args)
     .SupportsFlag("serve", "Start the site going in a dev server")
     .SupportsFlag("force", "Overwrite any destination content");
 
-parser.Help(indent);
+// Show it to the user.
+parser.Help();
+
+// Check their input.
 parser.Parse();
 
+// Show any errors, and abort.
 if (parser.HasErrors)
 {
-    parser.ShowErrors(indent);
+    parser.ShowErrors();
     return;
 }
-parser.ShowProvidedArguments(indent);
 
+// Summarise what they chose.
+parser.ShowProvidedArguments();
+
+// Make use of the options/flags.
 var startServing = parser.IsFlagProvided("serve");
 var port = parser.GetOption<int>("port");
 var read = parser.GetOption<string>("read");
@@ -79,40 +86,44 @@ parser.Parse();
 
 ## Auto-generated helper text
 
-In the examples below, `2` is a left indent of two spaces.
+#### `Parser.Help();`
 
-#### `Parser.Help(2);`
+This method supports an optional parameter to specify an indent when writing to the screen.
 
-*These are displayed in the order they were created on the parser instance in your code.*
+*These are displayed in the order they were created on the parser instance in your code. Here's an example.*
 
 ``` text
-  -port    integer       Port to start the dev server on  [1337]
-  -read    text        * Folder to read the site from  [site]
-  -write   text        * Folder to write the result to
-  -apr     number        Annual interest  [3.596]
-  -fee     number        Monthly charge  [19.50]
-  -secure  true/false    Serve on HTTPS?  [True]
-  -until   datetime      When to stop serving  [22/08/2023 06:28:13]
-  -force                 Overwrite any destination content
-  -serve                 Start the site going in a dev server
+-port    integer       Port to start the dev server on  [1337]
+-read    text        * Folder to read the site from  [site]
+-write   text        * Folder to write the result to
+-apr     number        Annual interest  [3.596]
+-fee     number        Monthly charge  [19.50]
+-secure  true/false    Serve on HTTPS?  [True]
+-until   datetime      When to stop serving  [22/08/2023 06:28:13]
+-force                 Overwrite any destination content
+-serve                 Start the site going in a dev server
 
-  * is required, values in square brackets are defaults
+* is required, values in square brackets are defaults
 ```
 
-#### `Parser.ShowErrors(2)`
+#### `Parser.ShowErrors()`
+
+This method supports an optional parameter to specify an indent when writing to the screen.
 
 ``` text
-  Option missing: write
-  Unknown flag: run
+Option missing: write
+Unknown flag: run
 ```
 
-#### `Parser.ShowProvidedArguments(2);`
+#### `Parser.ShowProvidedArguments();`
+
+This method supports an optional parameter to specify an indent when writing to the screen.
 
 ``` text
-  -port  3000
-  -read  in.txt
-  -force
-  -serve
+-port  3000
+-read  in.txt
+-force
+-serve
 ```
 
 #### `Parser.GetProvided()`
@@ -143,10 +154,11 @@ You can easily isolate options and flags using something like `.Where(x => x.Val
 
 #### `GetProvidedAsCommandArgs()`
 
-This automatically wraps up the result of `Parser.GetProvided()` as a space-delimited command argument string.
-In other words, it provides the same output as the example of that method (minus the app name prefix).
+This automatically wraps up the result of `Parser.GetProvided()` as a space-delimited command argument string.  In other words, it returns all the provided options/flags in the ideal format (minus the leading application name).
 
-Based on the `GetProvided` example, it would return:
+This can be used to annotate your own app's output with the command needed to produce that output, for example, or to automatically document how to recreate the effect of the current run.
+
+Based on the `GetProvided` example above, it would return:
 
 ```
 -port "3000" -read "in.txt" -force -serve
@@ -184,7 +196,7 @@ Example user input:
 MyApp -run data "Site Title" --serve -ignore -port 3000
 ```
 
-There are a few things wrong here with this input:
+There are a few things wrong with this input in relation to the setup of the options/flags in the example usage code:
 
 - The `-write` option is required but not provided
 - The provided `-run` option is not defined
@@ -246,7 +258,7 @@ Assert.IsFalse(result.IsFlagProvided("force"));
 
 ---
 
-Copyright K Cartlidge 2020-2023.
+Copyright K Cartlidge 2020-2024.
 
 Licensed under [GNU AGPLv3](./LICENSE) ([see here for more details](https://choosealicense.com/licenses/agpl-3.0/)).
 See the [CHANGELOG](./CHANGELOG.md) for current status.
