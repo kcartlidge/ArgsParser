@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- v6.0.0
+  - Allows .NET version roll-forward to 7+
 - v5.0.0
   - Auto-generated text and collections respect option/flag creation order
 	  - Previously outputs/results were sorted alphabetically
