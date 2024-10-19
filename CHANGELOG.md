@@ -7,6 +7,7 @@
     - Allows full fluent Parser creation
   - Added optional `heading` for the user display texts
   - Ensured `GetProvided` method includes non-mandatory option defaults
+  - Updated and clarified the `README` file
 - v5.0.0
   - Auto-generated text and collections respect option/flag creation order
 	  - Previously outputs/results were sorted alphabetically
