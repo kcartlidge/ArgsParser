@@ -2,6 +2,7 @@
 
 - v6.0.0
   - Allows .NET version roll-forward to 7+
+  - Added an `ArgsParser.Example` example console app
   - Made `ShowHelpLegend` a method rather than a property
     - Allows full fluent Parser creation
   - Added optional `heading` for the user display texts
