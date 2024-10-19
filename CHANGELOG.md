@@ -2,6 +2,10 @@
 
 - v6.0.0
   - Allows .NET version roll-forward to 7+
+  - Made `ShowHelpLegend` a method rather than a property
+    - Allows full fluent Parser creation
+  - Added optional `heading` for the user display texts
+  - Ensured `GetProvided` method includes non-mandatory option defaults
 - v5.0.0
   - Auto-generated text and collections respect option/flag creation order
 	  - Previously outputs/results were sorted alphabetically

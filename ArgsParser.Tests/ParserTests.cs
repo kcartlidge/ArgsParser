@@ -308,7 +308,7 @@ namespace ArgsParser.Tests
             var argName = "filename";
             var parser = new Parser(new string[] { $"-{argName}", "FILE.CSV" })
                 .SupportsOption<string>(argName, "A CSV filename")
-                .AddCustomOptionValidator(argName, IsCSV);
+                .AddCustomValidator(argName, IsCSV);
 
             parser.Parse();
 
@@ -321,7 +321,7 @@ namespace ArgsParser.Tests
             var argName = "filename";
             var parser = new Parser(new string[] { $"-{argName}", "FILE.TXT" })
                 .SupportsOption<string>(argName, "A CSV filename")
-                .AddCustomOptionValidator(argName, IsCSV);
+                .AddCustomValidator(argName, IsCSV);
 
             parser.Parse();
 
@@ -337,7 +337,7 @@ namespace ArgsParser.Tests
             var argName = "filename";
             var parser = new Parser(new string[] { }) // No value given.
                 .SupportsOption<string>(argName, "A CSV filename")
-                .AddCustomOptionValidator(argName, IsCSV);
+                .AddCustomValidator(argName, IsCSV);
 
             parser.Parse();
 
@@ -352,8 +352,8 @@ namespace ArgsParser.Tests
 
             Action action = () =>
             {
-                parser.AddCustomOptionValidator("o", null);
-                parser.AddCustomOptionValidator("o", null);
+                parser.AddCustomValidator("o", null);
+                parser.AddCustomValidator("o", null);
             };
 
             Assert.Throws<ArgumentException>(action.Invoke);
@@ -365,7 +365,7 @@ namespace ArgsParser.Tests
             var parser = new Parser(new string[] { })
                 .SupportsOption<string>("o", "An option");
 
-            Action action = () => parser.AddCustomOptionValidator("bad", null);
+            Action action = () => parser.AddCustomValidator("bad", null);
 
             Assert.Throws<ArgumentException>(action.Invoke);
         }
@@ -431,6 +431,7 @@ namespace ArgsParser.Tests
             var result = parser.GetOption<int>("o");
 
             Assert.AreEqual(42, result);
+            Assert.IsTrue(parser.GetProvided().ContainsKey("o"));
         }
 
         [Test]
@@ -443,6 +444,7 @@ namespace ArgsParser.Tests
             var result = parser.GetOption<int>("o");
 
             Assert.AreEqual(1337, result);
+            Assert.IsTrue(parser.GetProvided().ContainsKey("o"));
         }
 
 
