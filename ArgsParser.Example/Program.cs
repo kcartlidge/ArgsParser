@@ -5,17 +5,19 @@ namespace ArgsParser.Example
         static void Main(string[] args)
         {
             // Force example arguments.
-            args = new string[] { "-serve", "-verbose", "9999", "-write", "../output" };
+            args = new string[] { "-serve", "-from", "15 APR 1980 GMT", "-verbose", "9999", "-write", "../output" };
 
             Console.WriteLine();
             Console.WriteLine("EXAMPLE APPLICATION");
 
             // Define the options and flags, including whether required and any default values.
             var indent = 2;
+            var now = DateTime.Now.ToString("s");
             var parser = new Parser(args)
               .SupportsOption<int>("port", "Port to start the dev server on", 1337)    // Optional, with default.
               .RequiresOption<string>("read", "Folder to read the site from", "site")  // Required, with default.
               .RequiresOption<string>("write", "CSV file to write the result to")      // Required, no default.
+              .RequiresOption<DateTime>("from", "Earliest date/time", "01 JAN 1980")   // Required, with default.
               .SupportsFlag("serve", "Start the site going in a dev server")           // Optional flag.
               .SupportsFlag("force", "Overwrite any destination content")              // Optional flag.
               .AddCustomValidator("write", IsCSV)  // Automatic extra check.

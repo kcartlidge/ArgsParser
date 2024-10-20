@@ -11,6 +11,7 @@ namespace ArgsParser
         public readonly bool IsRequired;
         public readonly string Info;
         public readonly object DefaultValue;
+        public readonly bool IsQuoted;
 
         public bool IsOptional => IsRequired == false;
         public bool HasDefault => DefaultValue != null;
@@ -43,12 +44,15 @@ namespace ArgsParser
                 {
                     case "String":
                         ArgTypeName = "text";
+                        IsQuoted = true;
                         break;
                     case "Boolean":
                         ArgTypeName = "true/false";
+                        IsQuoted = false;
                         break;
                     case "DateTime":
                         ArgTypeName = "datetime";
+                        IsQuoted = true;
                         break;
                     case "Int":
                     case "Int16":
@@ -56,14 +60,17 @@ namespace ArgsParser
                     case "Int64":
                     case "Int128":
                         ArgTypeName = "integer";
+                        IsQuoted = false;
                         break;
                     case "Decimal":
                     case "Double":
                     case "Float":
                         ArgTypeName = "number";
+                        IsQuoted = false;
                         break;
                     default:
                         ArgTypeName = ArgTypeName.ToLowerInvariant();
+                        IsQuoted = true;
                         break;
                 }
             }

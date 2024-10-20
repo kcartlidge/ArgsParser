@@ -8,14 +8,51 @@ Available as a [nuget package](https://www.nuget.org/packages/ArgsParser/).
 
 ## Contents
 
+- [What the User Sees](#what-the-user-sees)
 - [Supported Features](#supported-features)
 - [**Example Usage**](#example-usage)
-  - [Example Output](#example-output)
 - [Custom Validation for Options](#custom-validation-for-options)
 - [Showing Helpful Information to the User](#showing-helpful-information-to-the-user)
 - [Getting the Provided Options and Flags](#getting-the-provided-options-and-flags)
 - [Checking for Errors Manually](#checking-for-errors-manually)
 - [Examples of Argument Errors](#examples-of-argument-errors)
+
+## What the User Sees
+
+Here's a preview. Details are discussed further on.
+***All** this ouput is automatically generated on demand, with the headings being customisable.*
+
+User command:
+
+``` shell
+MyApp -serve -from "15 APR 1980 GMT" -verbose 9999 -write "../output"
+```
+
+When called with the above (and using an example configuration detailed below) the default values for missing options will be included automatically and the user will see the following:
+
+``` text
+Usage:
+  -port   integer     Port to start the dev server on  [1337]
+  -read   text      * Folder to read the site from  ["site"]
+  -write  text      * CSV file to write the result to
+  -from   datetime  * Earliest date/time  ["01 JAN 1980"]
+  -serve              Start the site going in a dev server
+  -force              Overwrite any destination content
+
+  (*) denotes a required option
+  [ ] is a default value
+
+Provided:
+  -port   1337
+  -read  "site"
+  -write "../output"
+  -from  "15/04/1980 01:00:00"
+  -serve
+
+Issues:
+  -write does not hold a CSV filename
+  -verbose is an unknown option
+```
 
 ---
 
@@ -56,17 +93,19 @@ using ArgsParser;
 
 // Define the options and flags, including whether required and any default values.
 var indent = 2;
+var now = DateTime.Now.ToString("s");
 var parser = new Parser(args)
-  .SupportsOption<int>("port", "Port to start the dev server on", 1337)    // Optional, with default.
-  .RequiresOption<string>("read", "Folder to read the site from", "site")  // Required, with default.
-  .RequiresOption<string>("write", "CSV file to write the result to")      // Required, no default.
-  .SupportsFlag("serve", "Start the site going in a dev server")           // Optional flag.
-  .SupportsFlag("force", "Overwrite any destination content")              // Optional flag.
-  .AddCustomValidator("write", IsCSV)  // Automatic extra check.
-  .ShowHelpLegend(true)  // Include explanatory notes in Help text?
-  .Help(indent, "Usage:")  // Show instructions to the user.
-  .Parse()  // Check the provided input arguments.
-  .ShowProvided(indent, "Provided:");  // Summarise the provided options and flags.
+    .SupportsOption<int>("port", "Port to start the dev server on", 1337)    // Optional, with default.
+    .RequiresOption<string>("read", "Folder to read the site from", "site")  // Required, with default.
+    .RequiresOption<string>("write", "CSV file to write the result to")      // Required, no default.
+    .RequiresOption<DateTime>("from", "Earliest date/time", "01 JAN 1980")   // Required, with default.
+    .SupportsFlag("serve", "Start the site going in a dev server")           // Optional flag.
+    .SupportsFlag("force", "Overwrite any destination content")              // Optional flag.
+    .AddCustomValidator("write", IsCSV)  // Automatic extra check.
+    .ShowHelpLegend(true)  // Include explanatory notes in Help text?
+    .Help(indent, "Usage:")  // Show instructions to the user.
+    .Parse()  // Check the provided input arguments.
+    .ShowProvided(indent, "Provided:");  // Summarise the provided options and flags.
 
 // Show any errors, and abort.
 if (parser.HasErrors)
@@ -84,44 +123,13 @@ var writeToFolder = parser.GetOption<string>("write");
 
 The methods used, including `AddCustomValidator()`, are detailed further on.
 
-### Example Output
-
-User command:
-
-``` shell
-MyApp -serve -verbose true
-```
-
-When called with the above (and using the example configuration just discussed) the default values for `-port` and `-read` will be included automatically and the user will see the following:
-
-``` text
-Usage:
-  -port   integer    Port to start the dev server on  [1337]
-  -read   text     * Folder to read the site from  [site]
-  -write  text     * Folder to write the result to
-  -serve             Start the site going in a dev server
-  -force             Overwrite any destination content
-
-  * is required, values in square brackets are defaults
-
-Provided:
-  -port  1337
-  -read  site
-  -serve
-
-Issues:
-  -write is required
-  -verbose is an unknown option
-```
-
-(A fuller explanation of the *Issues:* appears shortly in the [Examples of Argument Errors](#examples-of-argument-errors) section below.)
-
 ## Custom Validation for Options
 
-Flags don't need custom validation; they are either provided or they're not. For options you can add custom validation beyond the built-in 'required' setting and the user-provided value's conversion to the expected data type.
+*Flags* don't need custom validation; they are either provided or they're not.
+For *options* you can add custom validation to go beyond the built-in 'required' setting and the user-provided value's conversion to the expected data type.
 
-Standard validation is concerned with the *presence/absence* of arguments.
-Custom option validators allow you to also check their *contents*.
+- Standard validation is concerned with the *presence/absence* of arguments
+- Custom option validators allow you to also check their *contents*
 
 For example, here's a custom validator function that checks an option contains a CSV filename. This same function can be assigned to multiple options (eg both an input filename and an output filename). You can also use inline lambda but a full function is both clearer for explanatory purposes and also reusable.
 

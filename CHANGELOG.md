@@ -1,5 +1,10 @@
 # CHANGELOG
 
+- v6.0.1 (unreleased)
+  - Small refactoring of the legend logic
+  - Show quotes for usage textual default values
+  - Slight tidy-up of the README
+    - Include a datetime example
 - v6.0.0
   - Allows .NET version roll-forward to 7+
   - Added an `ArgsParser.Example` example console app
@@ -10,62 +15,62 @@
   - Updated and clarified the `README` file
 - v5.0.0
   - Auto-generated text and collections respect option/flag creation order
-	  - Previously outputs/results were sorted alphabetically
-		- Options/flags now include a `Sequence` field
-	- Internals maintain a single collection of options/flags
-	  - Previously these were separate and handled individually
-	- Added `GetProvidedAsCommandArgs` method
+    - Previously outputs/results were sorted alphabetically
+    - Options/flags now include a `Sequence` field
+  - Internals maintain a single collection of options/flags
+    - Previously these were separate and handled individually
+  - Added `GetProvidedAsCommandArgs` method
 - v4.0.6
   - Added `GetProvided` method
 - v4.0.5
-	- Reformatted Help() for clarity
-	- Also now displays defaults, types, and optional legend
+  - Reformatted Help() for clarity
+  - Also now displays defaults, types, and optional legend
 - v4.0.4
-	- Custom option validators (plus tests)
+  - Custom option validators (plus tests)
 - v4.0.3
-	- Bug fix: `ShowProvidedArguments` gatekeeping inverted
-	- Change log (this file) reformatted
+  - Bug fix: `ShowProvidedArguments` gatekeeping inverted
+  - Change log (this file) reformatted
 - v4.0.2
-	- Add `ShowErrors()` method
-	- Add `ShowProvidedArguments()` method
-	- Remove extra blank output lines
-	- Support indented output
+  - Add `ShowErrors()` method
+  - Add `ShowProvidedArguments()` method
+  - Remove extra blank output lines
+  - Support indented output
 - v4.0.1
-	- Fix `Help()` when no options or no flags
+  - Fix `Help()` when no options or no flags
 - v4.0.0
-	- Upgraded dependencies
-	- Moved tests from Core 3 to Net 7
-	- Fixed cross-platform failure
-		- Caused by a project `PlatformTarget` of `x64`
-	- Some README clarifications
+  - Upgraded dependencies
+  - Moved tests from Core 3 to Net 7
+  - Fixed cross-platform failure
+    - Caused by a project `PlatformTarget` of `x64`
+  - Some README clarifications
 - v3.0.0
-	- Reformatted README
-		- Nicer layout in Nuget
-	- Cleaner public surface
-	- Simplified error collections
-		- Expectation errors
-		- Argument errors
+  - Reformatted README
+    - Nicer layout in Nuget
+  - Cleaner public surface
+  - Simplified error collections
+    - Expectation errors
+    - Argument errors
 - v2.0.0
-	- Renamed `ArgsParser` class to `Parser`
-		- "Avoids stuttering" as Golang would say
-	- Renamed `ParsedFlags` to `Flags`
-	- Renamed `ParsedOptions` to `Options`
-	- Enhanced Intellisense details
-	- All flags/options treated lowercase
-		- For clarity, convenience, and consistency
-		- Actual option values returned unchanged
+  - Renamed `ArgsParser` class to `Parser`
+    - "Avoids stuttering" as Golang would say
+  - Renamed `ParsedFlags` to `Flags`
+  - Renamed `ParsedOptions` to `Options`
+  - Enhanced Intellisense details
+  - All flags/options treated lowercase
+    - For clarity, convenience, and consistency
+    - Actual option values returned unchanged
 - v1.0.1
-	- Include default values
-	- Add `OptionProvided`
-	- Add `PropertyProvided`
-	- Add typed `GetOption`
-	- Include tests for the above
+  - Include default values
+  - Add `OptionProvided`
+  - Add `PropertyProvided`
+  - Add typed `GetOption`
+  - Include tests for the above
 - Pre-release
-	- Initial commit
-	- Add `ArgDetail` model
-		- And tests
-	- Add `ArgsParser` class
-		- And tests
-	- Support typed options
-		- Converts where possible
-		- Else returns as strings
+  - Initial commit
+  - Add `ArgDetail` model
+    - And tests
+  - Add `ArgsParser` class
+    - And tests
+  - Support typed options
+    - Converts where possible
+    - Else returns as strings

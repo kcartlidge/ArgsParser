@@ -299,8 +299,9 @@ namespace ArgsParser
                     var typename = item.ArgTypeName.PadRight(typeWidth);
                     var required = item.IsRequired ? req : " ";
                     var key = item.Name.PadRight(width);
+                    var q = item.IsQuoted ? "\"" : "";
                     var def = item.HasDefault
-                        ? $"[{item.DefaultValue}]"
+                        ? $"[{q}{item.DefaultValue}{q}]"
                         : "";
 
                     Console.WriteLine($"{pad}-{key}  {typename}  {required} {item.Info}  {def}");
@@ -316,15 +317,13 @@ namespace ArgsParser
             // Add legend if any items are required or have a default.
             if (showHelpLegend)
             {
-                var legend = new List<string>();
-                if (known.Any(x => x.IsRequired))
-                    legend.Add($"* is required");
-                if (known.Any(x => x.HasDefault))
-                    legend.Add($"values in square brackets are defaults");
-                if (legend.Any())
+                var hasRequired = known.Any(x => x.IsRequired);
+                var hasDefaults = known.Any(x => x.HasDefault);
+                if (hasRequired || hasDefaults)
                 {
                     Console.WriteLine();
-                    Console.WriteLine(pad + string.Join(", ", legend));
+                    if (hasRequired) Console.WriteLine($"{pad}(*) denotes a required option");
+                    if (hasDefaults) Console.WriteLine($"{pad}[ ] is a default value");
                 }
             }
 
@@ -386,7 +385,11 @@ namespace ArgsParser
                 if (value == null)
                     Console.WriteLine($"{pad}-{key}");
                 else
-                    Console.WriteLine($"{pad}-{key} {value}");
+                {
+                    var m = known.FirstOrDefault(x=>x.Name == item.Key);
+                    var q = m.IsQuoted ? "\"" : " ";
+                    Console.WriteLine($"{pad}-{key} {q}{value}{q}".TrimEnd());
+                }
             }
             return this;
         }
