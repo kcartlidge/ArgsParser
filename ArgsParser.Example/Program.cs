@@ -22,6 +22,10 @@ namespace ArgsParser.Example
               .SupportsFlag("force", "Overwrite any destination content")              // Optional flag.
               .AddCustomValidator("write", IsCSV)  // Automatic extra check.
               .ShowHelpLegend(true)  // Include explanatory notes in Help text?
+              .AddExtraHelp(
+                  "Notes:",
+                  "Specifying a port does nothing without adding the -serve flag.",
+                  "Choosing -force is potentially destructive!")
               .Help(indent, "Usage:")  // Show instructions to the user.
               .Parse()  // Check the provided input arguments.
               .ShowProvided(indent, "Provided:");  // Summarise the provided options and flags.
@@ -30,6 +34,7 @@ namespace ArgsParser.Example
             if (parser.HasErrors)
             {
                 parser.ShowErrors(indent, "Issues:");
+                Console.WriteLine();
                 return;
             }
 

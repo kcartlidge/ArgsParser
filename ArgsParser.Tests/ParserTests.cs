@@ -22,10 +22,10 @@ namespace ArgsParser.Tests
             var result = parser.Parse();
 
             Assert.AreEqual(4, result.ExpectationErrors.Count + result.ArgumentErrors.Count);
-            Assert.Contains("Option missing: write", result.ExpectationErrors.Values.ToList());
-            Assert.Contains("Unknown option: run", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("-write is required", result.ExpectationErrors.Values.ToList());
+            Assert.Contains("-run is an unknown option", result.ArgumentErrors.Values.ToList());
             Assert.Contains("Unexpected value: Site Title", result.ArgumentErrors.Values.ToList());
-            Assert.Contains("Unknown flag: ignore", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("-ignore is an unknown flag", result.ArgumentErrors.Values.ToList());
 
             Assert.IsTrue(result.IsOptionProvided("port"));
             Assert.AreEqual(3000, result.GetOption<int>("port"));
@@ -81,7 +81,7 @@ namespace ArgsParser.Tests
 
             var result = parser.Parse();
 
-            Assert.Contains("Option missing: opt", result.ExpectationErrors.Values.ToList());
+            Assert.Contains("-opt is required", result.ExpectationErrors.Values.ToList());
             Assert.IsEmpty(result.ArgumentErrors);
         }
 
@@ -126,7 +126,7 @@ namespace ArgsParser.Tests
                 .Parse();
 
             Assert.IsEmpty(result.ExpectationErrors);
-            Assert.Contains("Unknown option: a", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("-a is an unknown option", result.ArgumentErrors.Values.ToList());
         }
 
         [Test]
@@ -172,7 +172,7 @@ namespace ArgsParser.Tests
             var result = parser.Parse();
 
             Assert.IsEmpty(result.ExpectationErrors);
-            Assert.Contains("Unknown flag: serve", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("-serve is an unknown flag", result.ArgumentErrors.Values.ToList());
         }
 
 
@@ -501,8 +501,8 @@ namespace ArgsParser.Tests
 
             Assert.IsEmpty(result.ExpectationErrors);
             Assert.AreEqual(2, result.ArgumentErrors.Count);
-            Assert.Contains("Expected a value of type System.DateTime: dtm", result.ArgumentErrors.Values.ToList());
-            Assert.Contains("Expected a value of type System.Single: f", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("-dtm should be a value of type DateTime", result.ArgumentErrors.Values.ToList());
+            Assert.Contains("-f should be a value of type Single", result.ArgumentErrors.Values.ToList());
         }
 
         [Test]

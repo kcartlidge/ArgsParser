@@ -60,6 +60,18 @@ namespace ArgsParser
         private int maxFlagWidth =>
             knownFlags.Any() ? knownFlags.Max(x => x.Name.Length) : 1;
 
+        /// <summary>
+        /// Title displayed before additional help or notes in generated help documentation.
+        /// </summary>
+        private string extraHelpTitle = "Notes:";
+
+        /// <summary>
+        /// Additional text to append to the generated help output. This is typically used
+        /// for providing extra clarification, examples, or custom notes beyond the standard
+        /// options and usage descriptions.
+        /// </summary>
+        private string[] extraHelp = new string[0];
+
         #endregion
 
         /// <summary>
@@ -327,6 +339,17 @@ namespace ArgsParser
                 }
             }
 
+            // Show any extra help details.
+            if (extraHelp.Any())
+            {
+                Console.WriteLine();
+                Console.WriteLine(extraHelpTitle);
+                foreach (var line in extraHelp)
+                {
+                    Console.WriteLine($"{pad}{line.Trim()}");
+                }
+            }
+
             return this;
         }
 
@@ -334,6 +357,20 @@ namespace ArgsParser
         public Parser ShowHelpLegend(bool show = true)
         {
             showHelpLegend = show;
+            return this;
+        }
+
+        /// <summary>
+        /// Adds additional lines of help information to the parser's output.
+        /// Shows just below the options and flags.
+        /// </summary>
+        /// <param name="title">The heading to show above the text (eg `Notes:`).</param>
+        /// <param name="lines">Lines of text containing the extra stuff to display.</param>
+        /// <returns>The current instance of the Parser to allow method chaining.</returns>
+        public Parser AddExtraHelp(string title, params string[] lines)
+        {
+            extraHelpTitle = title.Trim();
+            extraHelp = lines;
             return this;
         }
 

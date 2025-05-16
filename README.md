@@ -3,7 +3,7 @@
 **Easy argument parsing** for .Net applications.
 Handles **options** (arguments with parameters) and **flags** (simple switches), with the facility to show **automatically generated** usage details and errors.
 
-Compatible with NetStandard 2.0 for use in Core 3 or later (tested to Net 8).
+Compatible with NetStandard 2.0 for use in Core 3 or later (tested to Net 9).
 Available as a [nuget package](https://www.nuget.org/packages/ArgsParser/).
 
 ## Contents
@@ -42,6 +42,10 @@ Usage:
   (*) denotes a required option
   [ ] is a default value
 
+Notes:
+  Specifying a port does nothing without adding the -serve flag.
+  Choosing -force is potentially destructive!
+
 Provided:
   -port   1337
   -read  "site"
@@ -64,6 +68,7 @@ Issues:
 - Supports *optional* named *flags*
 - Display *automatically formatted help/usage text* showing supported flags/options
   - Also shows argument types, defaults, and an optional legend
+  - Optionally includes extra lines of notes for the user
 - Display all *errors* (automatically formatted)
 - Display all *provided arguments* (automatically formatted, including any defaults)
 - Allows *custom validators* for options
@@ -103,6 +108,10 @@ var parser = new Parser(args)
     .SupportsFlag("force", "Overwrite any destination content")              // Optional flag.
     .AddCustomValidator("write", IsCSV)  // Automatic extra check.
     .ShowHelpLegend(true)  // Include explanatory notes in Help text?
+    .AddExtraHelp(
+        "Notes:",
+        "Specifying a port does nothing without adding the -serve flag.",
+        "Choosing -force is potentially destructive!")
     .Help(indent, "Usage:")  // Show instructions to the user.
     .Parse()  // Check the provided input arguments.
     .ShowProvided(indent, "Provided:");  // Summarise the provided options and flags.
@@ -217,6 +226,23 @@ Any options which weren't provided by the user will also appear here if a defaul
 -read  in.txt
 -force
 -serve
+```
+
+### `Parser.ShowHelpLegend(bool show = true);`
+
+If this is `true` (the default) then, if there are required or default values,
+an extra bit of text shows below the options/flags to detail that fact.
+
+### `Parser.AddExtraHelp(string title, params string[] lines);`
+
+You can use this to add any extra information you need in the help area.
+The main use is for notes to expand upon how the options/flags interact.
+
+``` text
+parser.AddExtraHelp(
+    "Notes:",
+    "Specifying a port does nothing without adding the -serve flag.",
+    "Choosing -force is potentially destructive!")
 ```
 
 ## Getting the Provided Options and Flags
@@ -357,7 +383,7 @@ Based on the example above the errors (as key/value pairs) will be as follows:
 
 ---
 
-Copyright K Cartlidge 2020-2024.
+Copyright K Cartlidge 2020-2025.
 
 Licensed under [GNU AGPLv3](./LICENSE) ([see here for more details](https://choosealicense.com/licenses/agpl-3.0/)).
 See the [CHANGELOG](./CHANGELOG.md) for current status.

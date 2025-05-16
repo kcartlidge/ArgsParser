@@ -9,3 +9,4 @@ _NCrunch*/
 .DS_Store
 *.suo
 *.ncrunch*
+*.user
