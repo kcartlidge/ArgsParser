@@ -49,6 +49,41 @@ namespace ArgsParser.Tests
             Assert.IsFalse(result.HasErrors);
         }
 
+        [Test]
+        public void NothingAllowed_NothingProvided_ShowHelp_DoesNotThrow()
+        {
+            var parser = new Parser(new string[] { })
+                .Parse();
+
+            TestDelegate action = new(() => parser.Help());
+
+            Assert.DoesNotThrow(action);
+        }
+
+        [Test]
+        public void OnlyOptions_ShowHelp_DoesNotThrow()
+        {
+            var parser = new Parser(new string[] { })
+                .SupportsOption<string>("opt", "An option")
+                .Parse();
+
+            TestDelegate action = new(() => parser.Help());
+
+            Assert.DoesNotThrow(action);
+        }
+
+        [Test]
+        public void OnlyFlags_ShowHelp_DoesNotThrow()
+        {
+            var parser = new Parser(new string[] { })
+                .SupportsFlag("flag","A flag")
+                .Parse();
+
+            TestDelegate action = new(() => parser.Help());
+
+            Assert.DoesNotThrow(action);
+        }
+
         /* OPTIONS */
 
         [Test]
