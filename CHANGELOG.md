@@ -1,6 +1,9 @@
 # CHANGELOG
 
-- v6.0.1 (unreleased)
+- v6.1.1
+  - Fixed empty sequence error when no options (only flags)
+  - Clarified example project use of hardcoded arguments
+- v6.0.1
   - Small refactoring of the legend logic
   - Show quotes for usage textual default values
   - Slight tidy-up of the README
