@@ -294,7 +294,7 @@ namespace ArgsParser
             var pad = "".PadLeft(indent);
             var req = "*";
             var width = Math.Max(maxOptionWidth, maxFlagWidth);
-            var typeWidth = knownOptions.Max(x => x.ArgTypeName.Length);
+            var typeWidth = knownOptions.Any() ? knownOptions.Max(x => x.ArgTypeName.Length) : 0;
             var flagWidth = width + (knownOptions.Any() ? typeWidth + 2 : 0);
 
             if (heading.Any())

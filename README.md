@@ -16,6 +16,7 @@ Available as a [nuget package](https://www.nuget.org/packages/ArgsParser/).
 - [Getting the Provided Options and Flags](#getting-the-provided-options-and-flags)
 - [Checking for Errors Manually](#checking-for-errors-manually)
 - [Examples of Argument Errors](#examples-of-argument-errors)
+- [Running the Tests](#running-the-tests)
 
 ## What the User Sees
 
@@ -380,6 +381,12 @@ Based on the example above the errors (as key/value pairs) will be as follows:
     - This is unexpected because `run` was not recognised as a valid option
   - `4` => `-ignore is an unknown flag`
     - This is assumed to be a flag because it is followed by `-port` rather than a value
+
+## Running the Tests
+
+Normally you'd just do `dotnet test` at the top folder in the terminal/command prompt.
+
+Unfortunately the test runner treats console output as a *Warning*, and the tests that hit the `.Help()` method generate console output.  To suppress that you can use `dotnet test -- NUnit.ConsoleOut=0` instead.
 
 ---
 
